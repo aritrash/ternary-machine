@@ -104,7 +104,7 @@ The proposed system shall implement the following conceptual execution stack:
 
 ```text
 ┌──────────────────────────────────────┐
-│            Applications             │
+│            Applications              │
 │               .trn                   │
 ├──────────────────────────────────────┤
 │        Ternary Operating System      │
@@ -117,6 +117,7 @@ The proposed system shall implement the following conceptual execution stack:
 ├──────────────────┬───────────────────┤
 │      x86-64      │      AArch64      │
 └──────────────────┴───────────────────┘
+```
 
 The operating system and native applications shall interact exclusively with the virtual architecture.
 The host backend shall provide the mechanisms necessary to execute the virtual architecture using the physical host.
@@ -187,7 +188,7 @@ The project shall not treat ternary computing as inherently superior to binary c
 ## 5.1 Architectural Layers
 The system shall consist conceptually of the following layers:
 
-~~~text
+```text
 Application Layer
        │
        ▼
@@ -207,7 +208,7 @@ Host Backend
        │
        ▼
 Physical Hardware
-~~~
+```
 
 Each layer shall have a defined interface with the layer immediately below it.
 
@@ -371,7 +372,7 @@ These capabilities shall be implemented incrementally.
 ## 7.3 User Environment
 The operating system shall eventually support:
 
-~~~text
+```text
 kernel
   │
   ▼
@@ -380,7 +381,7 @@ init
   ├── system services
   ├── shell
   └── user applications
-~~~
+```
 
 Native applications shall use the Ternary ABI rather than directly interacting with the physical host architecture.
 
@@ -411,7 +412,7 @@ For deterministic programs, the reference virtual machine shall produce equivale
 Binary compatibility shall be considered an extension of the platform, rather than a prerequisite for the initial VM.
 The intended conceptual pipeline is:
 
-~~~text
+```text
 Existing binary
       │
       ▼
@@ -425,7 +426,7 @@ Ternary representation
       │
       ▼
 .trn
-~~~
+```
 
 **FR-BIN-001**
 The system shall provide an extensible mechanism for translating supported binary programs into the ternary execution environment.
@@ -541,7 +542,7 @@ CI shall be introduced once the first executable implementation exists.
 # 12. Verification and Validation
 The project shall follow a layered verification strategy.
 
-~~~text
+```text
 Ternary arithmetic
         ↓
 ISA semantics
@@ -557,7 +558,7 @@ Executable loader
 Operating system
         ↓
 Cross-host execution
-~~~
+```
 
 Each layer shall have tests before dependent layers are considered stable.
 
@@ -676,7 +677,7 @@ The project shall be developed incrementally.
 # 16. Initial Success Criteria
 The first major release shall be considered successful when the project can demonstrate:
 
-~~~text
+```text
                   source
                     │
                     ▼
@@ -699,11 +700,11 @@ The first major release shall be considered successful when the project can demo
                     │
                     ▼
              user application
-~~~
+```
 
 and the same `.trn` application and operating-system image can execute with equivalent architectural behaviour on at least:
 
-~~~text
+```text
 x86-64 host
      │
      ▼
@@ -713,13 +714,13 @@ AArch64 host
      │
      ▼
 Ternary Machine
-~~~
+```
 
 # 17. Requirements Traceability
 Every functional and non-functional requirement shall have a unique identifier.
 Requirements shall eventually be traceable through:
 
-~~~text
+```text
 Requirement
      ↓
 Architecture specification
@@ -729,7 +730,7 @@ Implementation
 Test
      ↓
 Release
-~~~
+```
 
 A separate requirements traceability matrix may be maintained outside this SRS.
 
