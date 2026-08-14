@@ -69,5 +69,14 @@ int main() {
     assert(cargo_instruction.word().trit(10) == Trit::Pos);
     assert(cargo_instruction.word().trit(26) == Trit::Pos);
 
+	const Instruction original = Instruction::encode(Opcode::LDI, 4, 2, 7);
+    const Instruction decoded = Instruction::decode(original.word());
+
+    assert(decoded == original);
+    assert(decoded.opcode() == Opcode::LDI);
+    assert(decoded.rd() == 4);
+    assert(decoded.rs1() == 2);
+    assert(decoded.rs2() == 7);
+    
     return 0;
 }

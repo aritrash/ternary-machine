@@ -70,6 +70,12 @@ public:
 
         return instruction;
     }
+    
+    static constexpr Instruction decode(const Word& word) noexcept {
+	    Instruction instruction;
+	    instruction.word_ = word;
+	    return instruction;
+	}
 
     [[nodiscard]] constexpr Opcode opcode() const noexcept {
         return static_cast<Opcode>(decode_balanced(OPCODE_OFFSET, OPCODE_WIDTH));
@@ -99,7 +105,7 @@ public:
     }
 
     constexpr bool operator==(const Instruction&) const noexcept = default;
-
+    
 private:
     static constexpr std::array<std::array<Trit, 2>, 9> REGISTER_ENCODING = {{
         {{Trit::Neg, Trit::Neg}},
