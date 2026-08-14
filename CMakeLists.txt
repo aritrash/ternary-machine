@@ -30,3 +30,7 @@ add_test(NAME instruction_test COMMAND instruction_test)
 add_executable(register_file_test tests/vm/register_file_test.cpp)
 target_link_libraries(register_file_test PRIVATE ternary_machine)
 add_test(NAME register_file_test COMMAND register_file_test)
+
+add_executable(cpu_state_test tests/vm/cpu_state_test.cpp)
+target_link_libraries(cpu_state_test PRIVATE ternary_machine)
+add_test(NAME cpu_state_test COMMAND cpu_state_test)
