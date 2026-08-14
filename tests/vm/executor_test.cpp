@@ -11,6 +11,7 @@ using ternary_machine::vm::ExecutionError;
 using ternary_machine::vm::Executor;
 using ternary_machine::vm::Machine;
 using ternary_machine::vm::Register;
+using ternary_machine::vm::Comparison;
 
 static Instruction::Cargo make_cargo(std::int64_t value) {
     Instruction::Cargo cargo{};
@@ -111,22 +112,170 @@ int main() {
     {
         Machine machine;
         const Word address = Word::from_integer(0);
-        const Instruction instruction = Instruction::encode(Opcode::ADD, 0, 1, 2);
+        const Instruction instruction = Instruction::encode(Opcode::ADD, 3, 1, 2);
 
+        machine.cpu().registers().write(Register::R1, Word::from_integer(5));
+        machine.cpu().registers().write(Register::R2, Word::from_integer(7));
         machine.memory().write(address, instruction.word());
         machine.cpu().set_pc(address);
 
-        bool threw = false;
+        executor.step(machine);
 
-        try {
-            executor.step(machine);
-        } catch (const ExecutionError&) {
-            threw = true;
+        assert(!machine.halted());
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == 12);
+        assert(machine.cpu().registers().read(Register::R1).to_integer() == 5);
+        assert(machine.cpu().registers().read(Register::R2).to_integer() == 7);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+        {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+        const Instruction instruction = Instruction::encode(Opcode::SUB, 3, 1, 2);
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(5));
+        machine.cpu().registers().write(Register::R2, Word::from_integer(7));
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == -2);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+        const Instruction instruction = Instruction::encode(Opcode::MUL, 3, 1, 2);
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(5));
+        machine.cpu().registers().write(Register::R2, Word::from_integer(7));
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == 35);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+        const Instruction instruction = Instruction::encode(Opcode::CMP, 0, 1, 2);
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(5));
+        machine.cpu().registers().write(Register::R2, Word::from_integer(7));
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().status() == Comparison::Less);
+        assert(machine.cpu().registers().read(Register::R0) == Word::zero());
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(-1));
+		machine.cpu().registers().write(Register::R2, Word::from_integer(1));
+
+        const Instruction instruction = Instruction::encode(Opcode::TAND, 3, 1, 2);
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == -1);
+        assert(machine.cpu().registers().read(Register::R1).to_integer() == -1);
+        assert(machine.cpu().registers().read(Register::R2).to_integer() == 1);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(-1));
+        machine.cpu().registers().write(Register::R2, Word::from_integer(1));
+
+        const Instruction instruction = Instruction::encode(Opcode::TOR, 3, 1, 2);
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == 1);
+        assert(machine.cpu().registers().read(Register::R1).to_integer() == -1);
+        assert(machine.cpu().registers().read(Register::R2).to_integer() == 1);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(-1));
+        machine.cpu().registers().write(Register::R2, Word::from_integer(1));
+
+        const Instruction instruction = Instruction::encode(Opcode::TXOR, 3, 1, 2);
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == 1);
+        assert(machine.cpu().registers().read(Register::R1).to_integer() == -1);
+        assert(machine.cpu().registers().read(Register::R2).to_integer() == 1);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(-1));
+
+        const Instruction instruction = Instruction::encode(Opcode::TNOT, 3, 1, 0);
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == 1);
+        assert(machine.cpu().registers().read(Register::R1).to_integer() == -1);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+
+        const Word lhs = Word::from_integer(-6561);
+        const Word rhs = Word::from_integer(2187);
+
+        machine.cpu().registers().write(Register::R1, lhs);
+        machine.cpu().registers().write(Register::R2, rhs);
+
+        const Instruction instruction = Instruction::encode(Opcode::TAND, 3, 1, 2);
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        const Word result = machine.cpu().registers().read(Register::R3);
+
+        for (std::size_t i = 0; i < Word::WIDTH; ++i) {
+            const auto a = lhs.trit(i);
+            const auto b = rhs.trit(i);
+            assert(result.trit(i) == (static_cast<int>(a) < static_cast<int>(b) ? a : b));
         }
 
-        assert(threw);
-        assert(!machine.halted());
-        assert(machine.cpu().pc() == address);
+        assert(machine.cpu().pc() == Word::from_integer(1));
     }
 
     {

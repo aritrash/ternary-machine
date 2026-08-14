@@ -46,3 +46,7 @@ add_test(NAME machine_test COMMAND machine_test)
 add_executable(executor_test tests/vm/executor_test.cpp)
 target_link_libraries(executor_test PRIVATE ternary_machine)
 add_test(NAME executor_test COMMAND executor_test)
+
+add_executable(alu_test tests/vm/alu_test.cpp)
+target_link_libraries(alu_test PRIVATE ternary_machine)
+add_test(NAME alu_test COMMAND alu_test)
