@@ -25,14 +25,24 @@ public:
         return memory_;
     }
 
-    void reset() noexcept {
+    [[nodiscard]] constexpr bool halted() const noexcept {
+        return halted_;
+    }
+
+    constexpr void halt() noexcept {
+        halted_ = true;
+    }
+
+    constexpr void reset() noexcept {
         cpu_.reset();
         memory_.clear();
+        halted_ = false;
     }
 
 private:
     CPUState cpu_{};
     Memory memory_{};
+    bool halted_ = false;
 };
 
 }

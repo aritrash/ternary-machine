@@ -21,10 +21,11 @@ int main() {
         machine.memory().write(address, instruction.word());
         machine.cpu().set_pc(address);
 
-        assert(machine.cpu().pc() == address);
+        assert(!machine.halted());
 
         executor.step(machine);
 
+        assert(!machine.halted());
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
 
@@ -38,7 +39,49 @@ int main() {
 
         executor.step(machine);
 
+        assert(!machine.halted());
         assert(machine.cpu().pc() == Word::from_integer(43));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+        const Instruction instruction = Instruction::encode(Opcode::HLT, 0, 0, 0);
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        assert(!machine.halted());
+
+        executor.step(machine);
+
+        assert(machine.halted());
+        assert(machine.cpu().pc() == address);
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+        const Instruction instruction = Instruction::encode(Opcode::HLT, 0, 0, 0);
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.halted());
+
+        bool threw = false;
+
+        try {
+            executor.step(machine);
+        } catch (const ExecutionError&) {
+            threw = true;
+        }
+
+        assert(threw);
+        assert(machine.halted());
+        assert(machine.cpu().pc() == address);
     }
 
     {
@@ -58,7 +101,20 @@ int main() {
         }
 
         assert(threw);
+        assert(!machine.halted());
         assert(machine.cpu().pc() == address);
+    }
+
+    {
+        Machine machine;
+        machine.halt();
+
+        assert(machine.halted());
+
+        machine.reset();
+
+        assert(!machine.halted());
+        assert(machine.cpu().pc() == Word::zero());
     }
 
     return 0;

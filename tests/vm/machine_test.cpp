@@ -10,6 +10,7 @@ using ternary_machine::vm::Register;
 int main() {
     Machine machine;
 
+    assert(!machine.halted());
     assert(machine.cpu().pc() == Word::zero());
     assert(machine.cpu().sp() == Word::zero());
     assert(machine.cpu().status() == Comparison::Equal);
@@ -24,7 +25,9 @@ int main() {
     const Word value = Word::from_integer(-5678);
 
     machine.memory().write(address, value);
+    machine.halt();
 
+    assert(machine.halted());
     assert(machine.cpu().pc().to_integer() == 100);
     assert(machine.cpu().sp().to_integer() == 500);
     assert(machine.cpu().status() == Comparison::Greater);
@@ -34,6 +37,7 @@ int main() {
 
     machine.reset();
 
+    assert(!machine.halted());
     assert(machine.cpu().pc() == Word::zero());
     assert(machine.cpu().sp() == Word::zero());
     assert(machine.cpu().status() == Comparison::Equal);
