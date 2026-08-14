@@ -1208,3 +1208,73 @@ TVM Interpreter
 ```
 
 No CPU instruction execution shall be implemented until the underlying ternary representation has automated tests.
+
+## 34. Memory Architecture
+
+TVM uses a Word-addressed memory architecture.
+
+The architectural Word is the universal machine unit and consists of exactly 27 trits, or three Trytes.
+
+The following architectural components are all 27 trits wide:
+
+- general-purpose registers;
+- PC;
+- SP;
+- memory locations;
+- instruction words;
+- memory addresses.
+
+Therefore:
+
+    1 memory location = 1 Word = 27 trits
+    1 instruction = 1 Word = 27 trits
+
+There is no sub-Word addressing in TVM v0.1.
+
+A memory address identifies one complete Word.
+
+### 34.1 Address Space
+
+A 27-trit address provides:
+
+    3^27 = 7,625,597,484,987
+
+distinct Word addresses.
+
+The theoretical virtual address range is therefore:
+
+    0 ... 7,625,597,484,986
+
+The implementation is not required to physically allocate the entire address space. Sparse or demand-allocated host storage may be used.
+
+### 34.2 Instruction Fetch
+
+Every instruction occupies exactly one Word.
+
+Instruction fetch is therefore:
+
+    instruction = memory[PC]
+
+After a sequential instruction fetch:
+
+    PC = PC + 1
+
+unless the instruction modifies control flow.
+
+### 34.3 Data Access
+
+The initial TVM architecture provides Word-granular data access.
+
+`LD` reads one Word from memory.
+
+`ST` writes one Word to memory.
+
+No byte-, trit-, or Tryte-level memory access is provided by the initial ISA.
+
+### 34.4 Stack Access
+
+The stack is located within the same unified Word-addressed virtual memory space.
+
+`SP` identifies a Word location.
+
+Stack operations therefore operate on complete Words.
