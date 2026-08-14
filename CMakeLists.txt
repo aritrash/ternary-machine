@@ -22,3 +22,7 @@ add_test(NAME tryte_test COMMAND tryte_test)
 add_executable(word_test tests/ternary/word_test.cpp)
 target_link_libraries(word_test PRIVATE ternary_machine)
 add_test(NAME word_test COMMAND word_test)
+
+add_executable(instruction_test tests/ternary/instruction_test.cpp)
+target_link_libraries(instruction_test PRIVATE ternary_machine)
+add_test(NAME instruction_test COMMAND instruction_test)
