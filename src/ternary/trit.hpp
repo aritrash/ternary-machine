@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace tm::ternary {
+namespace ternary_machine::ternary {
 
 	enum class Trit : std::int8_t {
 	    Neg = -1,

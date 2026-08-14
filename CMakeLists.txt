@@ -13,5 +13,8 @@ enable_testing()
 
 add_executable(trit_test tests/ternary/trit_test.cpp)
 target_link_libraries(trit_test PRIVATE ternary_machine)
-
 add_test(NAME trit_test COMMAND trit_test)
+
+add_executable(tryte_test tests/ternary/tryte_test.cpp)
+target_link_libraries(tryte_test PRIVATE ternary_machine)
+add_test(NAME tryte_test COMMAND tryte_test)
