@@ -26,3 +26,7 @@ add_test(NAME word_test COMMAND word_test)
 add_executable(instruction_test tests/ternary/instruction_test.cpp)
 target_link_libraries(instruction_test PRIVATE ternary_machine)
 add_test(NAME instruction_test COMMAND instruction_test)
+
+add_executable(register_file_test tests/vm/register_file_test.cpp)
+target_link_libraries(register_file_test PRIVATE ternary_machine)
+add_test(NAME register_file_test COMMAND register_file_test)
