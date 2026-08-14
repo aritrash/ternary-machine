@@ -124,6 +124,17 @@ public:
                 machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
                 return;
                 
+            case ternary::Opcode::SHF:
+                machine.cpu().registers().write(
+                    static_cast<Register>(instruction.rd()),
+                    ALU::shift(
+                        machine.cpu().registers().read(static_cast<Register>(instruction.rs1())),
+                        machine.cpu().registers().read(static_cast<Register>(instruction.rs2())).to_integer()
+                    )
+                );
+                machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+                return;
+                
             case ternary::Opcode::CMP:
 				machine.cpu().set_status(
 					ALU::compare(

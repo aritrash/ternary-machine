@@ -80,6 +80,29 @@ public:
 
         return result;
     }
+    
+    [[nodiscard]] static ternary::Word shift(const ternary::Word& value, std::int64_t amount) noexcept {
+		ternary::Word result = ternary::Word::zero();
+
+		if (amount >= static_cast<std::int64_t>(ternary::Word::WIDTH) || amount <= -static_cast<std::int64_t>(ternary::Word::WIDTH))
+		    return result;
+
+		if (amount > 0) {
+		    const auto shift = static_cast<std::size_t>(amount);
+
+		    for (std::size_t i = shift; i < ternary::Word::WIDTH; ++i)
+		        result.set_trit(i - shift, value.trit(i));
+		} else if (amount < 0) {
+		    const auto shift = static_cast<std::size_t>(-amount);
+
+		    for (std::size_t i = 0; i + shift < ternary::Word::WIDTH; ++i)
+		        result.set_trit(i + shift, value.trit(i));
+		} else {
+		    result = value;
+		}
+
+		return result;
+	}
 
     [[nodiscard]] static Comparison compare(const ternary::Word& lhs, const ternary::Word& rhs) noexcept {
         const auto left = lhs.to_integer();

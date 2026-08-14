@@ -108,6 +108,46 @@ int main() {
         assert(tnot.to_integer() == 6561);
         assert(txor.to_integer() != lhs.to_integer());
     }
+    
+    {
+        const Word value = Word::from_integer(1);
+
+        assert(ALU::shift(value, 0) == value);
+        assert(ALU::shift(value, 1).to_integer() == 3);
+        assert(ALU::shift(value, 2).to_integer() == 9);
+        assert(ALU::shift(value, -1).to_integer() == 0);
+    }
+
+    {
+        Word value = Word::zero();
+
+        for (std::size_t i = 0; i < Word::WIDTH; ++i)
+            value.set_trit(i, i % 3 == 0 ? Trit::Neg : i % 3 == 1 ? Trit::Zero : Trit::Pos);
+
+        const Word left = ALU::shift(value, 3);
+        const Word right = ALU::shift(value, -3);
+
+        for (std::size_t i = 0; i < Word::WIDTH; ++i) {
+            if (i < Word::WIDTH - 3)
+                assert(left.trit(i) == value.trit(i + 3));
+            else
+                assert(left.trit(i) == Trit::Zero);
+
+            if (i < 3)
+                assert(right.trit(i) == Trit::Zero);
+            else
+                assert(right.trit(i) == value.trit(i - 3));
+        }
+    }
+
+    {
+        const Word value = Word::from_integer(12345);
+
+        assert(ALU::shift(value, 27) == Word::zero());
+        assert(ALU::shift(value, -27) == Word::zero());
+        assert(ALU::shift(value, 100) == Word::zero());
+        assert(ALU::shift(value, -100) == Word::zero());
+    }
 
     assert(ALU::compare(five, seven) == Comparison::Less);
     assert(ALU::compare(seven, five) == Comparison::Greater);

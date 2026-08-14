@@ -732,9 +732,13 @@ The operation inverts the sign of every trit:
 **Opcode:** `0nn`
 **Syntax:** `SHF Rd, Rs1, Rs2`
 
-SHF shifts trits spatially within a Word.
-The legacy architecture describes this operation as enabling multiplication or division by three.
-The exact direction encoding, shift amount interpretation, and behavior for shifts beyond the Word width shall be finalized before the ISA is frozen.
+SHF Rd, Rs1, Rs2 performs a logical shift of the 27-trit Word in Rs1.
+
+The signed Word value in Rs2 specifies the shift distance in trits.
+A positive value shifts left; a negative value shifts right.
+Vacated trits are filled with Zero trits.
+Trits shifted beyond the 27-trit Word boundary are discarded.
+A shift whose magnitude is greater than or equal to 27 produces a zero Word.
 
 ## 15. Memory and Data Transfer Instructions
 

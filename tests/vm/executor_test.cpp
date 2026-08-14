@@ -251,6 +251,50 @@ int main() {
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
     
+        {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+
+        const Word value = Word::from_integer(1);
+        const Word shift = Word::from_integer(3);
+
+        machine.cpu().registers().write(Register::R1, value);
+        machine.cpu().registers().write(Register::R2, shift);
+
+        const Instruction instruction = Instruction::encode(Opcode::SHF, 3, 1, 2);
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == 27);
+        assert(machine.cpu().registers().read(Register::R1) == value);
+        assert(machine.cpu().registers().read(Register::R2) == shift);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+
+        const Word value = Word::from_integer(2187);
+        const Word shift = Word::from_integer(-3);
+
+        machine.cpu().registers().write(Register::R1, value);
+        machine.cpu().registers().write(Register::R2, shift);
+
+        const Instruction instruction = Instruction::encode(Opcode::SHF, 3, 1, 2);
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == 81);
+        assert(machine.cpu().registers().read(Register::R1) == value);
+        assert(machine.cpu().registers().read(Register::R2) == shift);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
     {
         Machine machine;
         const Word address = Word::from_integer(0);
