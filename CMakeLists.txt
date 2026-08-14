@@ -18,3 +18,7 @@ add_test(NAME trit_test COMMAND trit_test)
 add_executable(tryte_test tests/ternary/tryte_test.cpp)
 target_link_libraries(tryte_test PRIVATE ternary_machine)
 add_test(NAME tryte_test COMMAND tryte_test)
+
+add_executable(word_test tests/ternary/word_test.cpp)
+target_link_libraries(word_test PRIVATE ternary_machine)
+add_test(NAME word_test COMMAND word_test)
