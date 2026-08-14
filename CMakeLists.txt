@@ -34,3 +34,11 @@ add_test(NAME register_file_test COMMAND register_file_test)
 add_executable(cpu_state_test tests/vm/cpu_state_test.cpp)
 target_link_libraries(cpu_state_test PRIVATE ternary_machine)
 add_test(NAME cpu_state_test COMMAND cpu_state_test)
+
+add_executable(memory_test tests/vm/memory_test.cpp)
+target_link_libraries(memory_test PRIVATE ternary_machine)
+add_test(NAME memory_test COMMAND memory_test)
+
+add_executable(machine_test tests/vm/machine_test.cpp)
+target_link_libraries(machine_test PRIVATE ternary_machine)
+add_test(NAME machine_test COMMAND machine_test)
