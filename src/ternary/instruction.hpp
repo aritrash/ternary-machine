@@ -57,7 +57,8 @@ public:
     constexpr Instruction() noexcept = default;
 
     static Instruction encode(Opcode opcode, std::uint8_t rd, std::uint8_t rs1, std::uint8_t rs2, const Cargo& cargo = {}) {
-        if (rd > 8 || rs1 > 8 || rs2 > 8) throw std::out_of_range("invalid TVM register");
+        if (rd > 8 || rs1 > 8 || rs2 > 8)
+            throw std::out_of_range("invalid TVM register");
 
         Instruction instruction;
         instruction.set_opcode(opcode);
@@ -70,12 +71,12 @@ public:
 
         return instruction;
     }
-    
-    static constexpr Instruction decode(const Word& word) noexcept {
-	    Instruction instruction;
-	    instruction.word_ = word;
-	    return instruction;
-	}
+
+    [[nodiscard]] static constexpr Instruction decode(const Word& word) noexcept {
+        Instruction instruction;
+        instruction.word_ = word;
+        return instruction;
+    }
 
     [[nodiscard]] constexpr Opcode opcode() const noexcept {
         return static_cast<Opcode>(decode_balanced(OPCODE_OFFSET, OPCODE_WIDTH));
@@ -100,12 +101,21 @@ public:
         return result;
     }
 
+    [[nodiscard]] constexpr std::int64_t immediate() const noexcept {
+        std::int64_t value = 0;
+
+        for (std::size_t i = CARGO_OFFSET; i < WIDTH; ++i)
+            value = value * 3 + static_cast<std::int8_t>(word_.trit(i));
+
+        return value;
+    }
+
     [[nodiscard]] constexpr const Word& word() const noexcept {
         return word_;
     }
 
     constexpr bool operator==(const Instruction&) const noexcept = default;
-    
+
 private:
     static constexpr std::array<std::array<Trit, 2>, 9> REGISTER_ENCODING = {{
         {{Trit::Neg, Trit::Neg}},
@@ -146,7 +156,7 @@ private:
         word_.set_trit(offset + 1, REGISTER_ENCODING[reg][1]);
     }
 
-    constexpr std::uint8_t decode_register(std::size_t offset) const noexcept {
+    [[nodiscard]] constexpr std::uint8_t decode_register(std::size_t offset) const noexcept {
         const Trit first = word_.trit(offset);
         const Trit second = word_.trit(offset + 1);
 
@@ -157,7 +167,7 @@ private:
         return 0;
     }
 
-    constexpr std::int8_t decode_balanced(std::size_t offset, std::size_t width) const noexcept {
+    [[nodiscard]] constexpr std::int8_t decode_balanced(std::size_t offset, std::size_t width) const noexcept {
         std::int8_t value = 0;
 
         for (std::size_t i = 0; i < width; ++i)

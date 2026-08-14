@@ -7,6 +7,28 @@ using ternary_machine::ternary::Instruction;
 using ternary_machine::ternary::Opcode;
 using ternary_machine::ternary::Trit;
 
+static Instruction::Cargo make_cargo(std::int64_t value) {
+    Instruction::Cargo cargo{};
+
+    for (std::size_t i = Instruction::CARGO_WIDTH; i-- > 0;) {
+        const std::int64_t remainder = value % 3;
+
+        if (remainder == 2) {
+            cargo[i] = Trit::Neg;
+            value = (value + 1) / 3;
+        } else if (remainder == -2) {
+            cargo[i] = Trit::Pos;
+            value = (value - 1) / 3;
+        } else {
+            cargo[i] = static_cast<Trit>(remainder);
+            value /= 3;
+        }
+    }
+
+    assert(value == 0);
+    return cargo;
+}
+
 int main() {
     static_assert(Instruction::WIDTH == 27);
     static_assert(Instruction::OPCODE_WIDTH == 3);
@@ -69,7 +91,7 @@ int main() {
     assert(cargo_instruction.word().trit(10) == Trit::Pos);
     assert(cargo_instruction.word().trit(26) == Trit::Pos);
 
-	const Instruction original = Instruction::encode(Opcode::LDI, 4, 2, 7);
+    const Instruction original = Instruction::encode(Opcode::LDI, 4, 2, 7);
     const Instruction decoded = Instruction::decode(original.word());
 
     assert(decoded == original);
@@ -77,6 +99,26 @@ int main() {
     assert(decoded.rd() == 4);
     assert(decoded.rs1() == 2);
     assert(decoded.rs2() == 7);
-    
+
+    {
+        const Instruction instruction = Instruction::encode(Opcode::LDI, 3, 0, 0, make_cargo(1));
+        assert(instruction.immediate() == 1);
+    }
+
+    {
+        const Instruction instruction = Instruction::encode(Opcode::LDI, 3, 0, 0, make_cargo(-1));
+        assert(instruction.immediate() == -1);
+    }
+
+    {
+        const Instruction instruction = Instruction::encode(Opcode::LDI, 3, 0, 0, make_cargo(123456));
+        assert(instruction.immediate() == 123456);
+    }
+
+    {
+        const Instruction instruction = Instruction::encode(Opcode::LDI, 3, 0, 0, make_cargo(-123456));
+        assert(instruction.immediate() == -123456);
+    }
+
     return 0;
 }

@@ -33,7 +33,7 @@ public:
         halted_ = true;
     }
 
-    constexpr void reset() noexcept {
+    void reset() noexcept {
         cpu_.reset();
         memory_.clear();
         halted_ = false;

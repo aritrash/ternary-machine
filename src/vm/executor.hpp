@@ -31,6 +31,14 @@ public:
                 machine.halt();
                 return;
 
+            case ternary::Opcode::LDI:
+                machine.cpu().registers().write(
+                    static_cast<Register>(instruction.rd()),
+                    ternary::Word::from_integer(instruction.immediate())
+                );
+                machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+                return;
+
             default:
                 throw ExecutionError("unsupported TVM opcode");
         }
