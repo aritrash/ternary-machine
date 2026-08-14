@@ -186,6 +186,56 @@ int main() {
         assert(machine.cpu().registers().read(Register::R4) == Word::zero());
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
+    
+        {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+        const Instruction instruction = Instruction::encode(Opcode::MOV, 3, 1, 0);
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(12345));
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        assert(machine.cpu().registers().read(Register::R3) == Word::zero());
+
+        executor.step(machine);
+
+        assert(!machine.halted());
+        assert(machine.cpu().registers().read(Register::R3).to_integer() == 12345);
+        assert(machine.cpu().registers().read(Register::R1).to_integer() == 12345);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+        const Instruction instruction = Instruction::encode(Opcode::MOV, 7, 2, 0);
+
+        machine.cpu().registers().write(Register::R2, Word::from_integer(-9876));
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R7).to_integer() == -9876);
+        assert(machine.cpu().registers().read(Register::R2).to_integer() == -9876);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word address = Word::from_integer(0);
+        const Instruction instruction = Instruction::encode(Opcode::MOV, 4, 4, 0);
+
+        machine.cpu().registers().write(Register::R4, Word::from_integer(456789));
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R4).to_integer() == 456789);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
 
     return 0;
 }

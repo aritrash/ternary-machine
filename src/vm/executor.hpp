@@ -38,6 +38,14 @@ public:
                 );
                 machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
                 return;
+                
+            case ternary::Opcode::MOV:
+				machine.cpu().registers().write(
+					static_cast<Register>(instruction.rd()),
+					machine.cpu().registers().read(static_cast<Register>(instruction.rs1()))
+				);
+				machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+				return;
 
             default:
                 throw ExecutionError("unsupported TVM opcode");
