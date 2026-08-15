@@ -61,4 +61,10 @@ add_test(NAME vector_table_test COMMAND vector_table_test)
 
 add_executable(lexer_test tests/assembler/lexer_test.cpp)
 target_include_directories(lexer_test PRIVATE src)
+target_compile_features(lexer_test PRIVATE cxx_std_20)
 add_test(NAME lexer_test COMMAND lexer_test)
+
+add_executable(parser_test tests/assembler/parser_test.cpp)
+target_include_directories(parser_test PRIVATE src)
+target_compile_features(parser_test PRIVATE cxx_std_20)
+add_test(NAME parser_test COMMAND parser_test)
