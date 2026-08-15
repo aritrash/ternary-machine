@@ -68,3 +68,8 @@ add_executable(parser_test tests/assembler/parser_test.cpp)
 target_include_directories(parser_test PRIVATE src)
 target_compile_features(parser_test PRIVATE cxx_std_20)
 add_test(NAME parser_test COMMAND parser_test)
+
+add_executable(semantic_test tests/assembler/semantic_test.cpp)
+target_include_directories(semantic_test PRIVATE src)
+target_compile_features(semantic_test PRIVATE cxx_std_20)
+add_test(NAME semantic_test COMMAND semantic_test)

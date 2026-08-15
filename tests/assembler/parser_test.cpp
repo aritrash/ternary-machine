@@ -228,6 +228,44 @@ int main() {
 
         assert(threw);
     }
+    
+    {
+		const auto program = parse("LD R1, [R2 - 10]\n");
+
+		const auto& instruction = std::get<InstructionIR>(program.statements[0]);
+
+		assert(instruction.mnemonic == "LD");
+		assert(instruction.operands.size() == 2);
+
+		const auto& memory = std::get<MemoryOperand>(instruction.operands[1]);
+
+		assert(memory.base == 2);
+		assert(memory.offset == -10);
+	}
+	
+	{
+		bool threw = false;
+
+		try {
+		    parse("LD R1, [R2 -]\n");
+		} catch (const ParseError&) {
+		    threw = true;
+		}
+
+		assert(threw);
+	}
+
+	{
+		bool threw = false;
+
+		try {
+		    parse("LD R1, [R2 +]\n");
+		} catch (const ParseError&) {
+		    threw = true;
+		}
+
+		assert(threw);
+	}
 
     return 0;
 }

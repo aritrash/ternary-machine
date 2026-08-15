@@ -117,8 +117,11 @@ private:
 
 		std::int64_t offset = 0;
 
-		if (match(TokenKind::Plus))
+		if (match(TokenKind::Plus)) {
 		    offset = consume(TokenKind::Number, "expected numeric offset after '+'").number;
+		} else if (match(TokenKind::Minus)) {
+		    offset = -consume(TokenKind::Number, "expected numeric offset after '-'").number;
+		}
 
 		(void)consume(TokenKind::RBracket, "expected ']' after memory operand");
 
