@@ -83,3 +83,7 @@ add_executable(resolver_test tests/assembler/resolver_test.cpp)
 target_include_directories(resolver_test PRIVATE src)
 target_compile_features(resolver_test PRIVATE cxx_std_20)
 add_test(NAME resolver_test COMMAND resolver_test)
+
+add_executable(layout_test tests/assembler/layout_test.cpp)
+target_include_directories(layout_test PRIVATE src)
+add_test(NAME layout_test COMMAND layout_test)
