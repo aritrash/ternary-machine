@@ -73,3 +73,8 @@ add_executable(semantic_test tests/assembler/semantic_test.cpp)
 target_include_directories(semantic_test PRIVATE src)
 target_compile_features(semantic_test PRIVATE cxx_std_20)
 add_test(NAME semantic_test COMMAND semantic_test)
+
+add_executable(symbol_table_test tests/assembler/symbol_table_test.cpp)
+target_include_directories(symbol_table_test PRIVATE src)
+target_compile_features(symbol_table_test PRIVATE cxx_std_20)
+add_test(NAME symbol_table_test COMMAND symbol_table_test)
