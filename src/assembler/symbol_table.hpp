@@ -6,8 +6,6 @@
 #include <string>
 #include <string_view>
 #include <unordered_map>
-#include <variant>
-#include <vector>
 #include <unordered_set>
 
 #include "assembler/ir.hpp"
@@ -38,7 +36,6 @@ public:
     void build(const AssemblyProgram& program) {
         symbols_.clear();
         globals_.clear();
-        references_.clear();
 
         std::string current_section;
         std::unordered_map<std::string, std::size_t> offsets;
@@ -50,11 +47,6 @@ public:
                 },
                 statement
             );
-        }
-
-        for (const auto& reference : references_) {
-            if (!contains(reference.name))
-                throw error(reference.location, "undefined symbol '" + reference.name + "'");
         }
     }
 
@@ -76,11 +68,6 @@ public:
     }
 
 private:
-    struct SymbolReference final {
-        std::string name;
-        SourceLocation location{};
-    };
-
     void process(
         const SectionIR& section,
         std::string& current_section,
@@ -111,10 +98,16 @@ private:
         std::unordered_map<std::string, std::size_t>& offsets
     ) {
         if (current_section.empty())
-            throw error(label.location, "label '" + label.name + "' is outside a section");
+            throw error(
+                label.location,
+                "label '" + label.name + "' is outside a section"
+            );
 
         if (symbols_.contains(label.name))
-            throw error(label.location, "duplicate symbol '" + label.name + "'");
+            throw error(
+                label.location,
+                "duplicate symbol '" + label.name + "'"
+            );
 
         const std::size_t offset = offsets[current_section];
 
@@ -122,7 +115,9 @@ private:
             label.name,
             current_section,
             offset,
-            globals_.contains(label.name) ? SymbolBinding::Global : SymbolBinding::Local
+            globals_.contains(label.name)
+                ? SymbolBinding::Global
+                : SymbolBinding::Local
         };
 
         symbols_.emplace(label.name, std::move(symbol));
@@ -134,12 +129,10 @@ private:
         std::unordered_map<std::string, std::size_t>& offsets
     ) {
         if (current_section.empty())
-            throw error(instruction.location, "instruction '" + instruction.mnemonic + "' is outside a section");
-
-        for (const auto& operand : instruction.operands) {
-            if (const auto* symbol = std::get_if<SymbolOperand>(&operand))
-                references_.push_back({symbol->name, instruction.location});
-        }
+            throw error(
+                instruction.location,
+                "instruction '" + instruction.mnemonic + "' is outside a section"
+            );
 
         ++offsets[current_section];
     }
@@ -157,7 +150,6 @@ private:
 
     std::unordered_map<std::string, Symbol> symbols_;
     std::unordered_set<std::string> globals_;
-    std::vector<SymbolReference> references_;
 };
 
 }

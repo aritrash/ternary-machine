@@ -165,31 +165,20 @@ int main() {
     }
 
     {
-        assert(rejects(
+        const auto table = build(
             "section .text\n"
             "JMP missing\n"
-        ));
-    }
+            "HLT\n"
+        );
 
-    {
-        assert(rejects(
-            "section .text\n"
-            "CALL missing_function\n"
-        ));
+        assert(table.symbols().empty());
+        assert(!table.contains("missing"));
     }
 
     {
         assert(rejects(
             "start:\n"
             "HLT\n"
-        ));
-    }
-
-    {
-        assert(rejects(
-            "section .text\n"
-            "HLT\n"
-            "JMP missing\n"
         ));
     }
 

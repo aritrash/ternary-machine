@@ -78,3 +78,8 @@ add_executable(symbol_table_test tests/assembler/symbol_table_test.cpp)
 target_include_directories(symbol_table_test PRIVATE src)
 target_compile_features(symbol_table_test PRIVATE cxx_std_20)
 add_test(NAME symbol_table_test COMMAND symbol_table_test)
+
+add_executable(resolver_test tests/assembler/resolver_test.cpp)
+target_include_directories(resolver_test PRIVATE src)
+target_compile_features(resolver_test PRIVATE cxx_std_20)
+add_test(NAME resolver_test COMMAND resolver_test)
