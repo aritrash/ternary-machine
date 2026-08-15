@@ -882,6 +882,47 @@ Conceptually:
 PC ← pop()
 ```
 
+### 16.7 Control-Flow Target Convention
+
+JMP and conditional branch instructions use PC-relative addressing.
+
+The 18-trit Cargo Block is interpreted as a signed balanced-ternary displacement.
+
+For a branch instruction at PC:
+
+    target = PC + displacement
+
+If a conditional branch is not taken:
+
+    PC ← PC + 1
+
+If a branch is taken:
+
+    PC ← target
+
+The displacement is interpreted as a signed value and is added to the current 27-trit PC using Word arithmetic.
+
+JMP displacement
+    PC ← PC + displacement
+
+BEQ displacement
+    if STATUS == Equal
+        PC ← PC + displacement
+    else
+        PC ← PC + 1
+
+BGT displacement
+    if STATUS == Greater
+        PC ← PC + displacement
+    else
+        PC ← PC + 1
+
+BLT displacement
+    if STATUS == Less
+        PC ← PC + displacement
+    else
+        PC ← PC + 1
+
 ## 17. System and I/O Instructions
 
 ### 17.1 IN — Input

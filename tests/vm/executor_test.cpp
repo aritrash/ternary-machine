@@ -429,6 +429,192 @@ int main() {
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
     
+    // JMP — positive displacement
+    {
+        Machine machine;
+        const Word address = Word::from_integer(10);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::JMP, 0, 0, 0, make_cargo(5)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(15));
+    }
+    
+    // JMP - negative displacement
+    {
+        Machine machine;
+        const Word address = Word::from_integer(20);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::JMP, 0, 0, 0, make_cargo(-7)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(13));
+    }
+    
+    // JMP — zero displacement
+    {
+        Machine machine;
+        const Word address = Word::from_integer(42);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::JMP, 0, 0, 0, make_cargo(0)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == address);
+    }
+    
+    // BEQ — taken
+    {
+        Machine machine;
+        const Word address = Word::from_integer(100);
+
+        machine.cpu().set_status(Comparison::Equal);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::BEQ, 0, 0, 0, make_cargo(12)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(112));
+    }
+    
+    // BEQ - not taken
+    {
+        Machine machine;
+        const Word address = Word::from_integer(100);
+
+        machine.cpu().set_status(Comparison::Greater);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::BEQ, 0, 0, 0, make_cargo(12)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(101));
+    }
+    
+    // BGT - taken
+    {
+        Machine machine;
+        const Word address = Word::from_integer(200);
+
+        machine.cpu().set_status(Comparison::Greater);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::BGT, 0, 0, 0, make_cargo(9)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(209));
+    }
+    
+	// BGT - not taken
+    {
+        Machine machine;
+        const Word address = Word::from_integer(200);
+
+        machine.cpu().set_status(Comparison::Equal);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::BGT, 0, 0, 0, make_cargo(9)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(201));
+    }
+    
+    // BLT - taken
+    {
+        Machine machine;
+        const Word address = Word::from_integer(300);
+
+        machine.cpu().set_status(Comparison::Less);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::BLT, 0, 0, 0, make_cargo(-15)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(285));
+    }
+    
+    // BLT - not taken
+    {
+        Machine machine;
+        const Word address = Word::from_integer(300);
+
+        machine.cpu().set_status(Comparison::Equal);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::BLT, 0, 0, 0, make_cargo(-15)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(301));
+    }
+    
+    {
+        Machine machine;
+        const Word address = Word::from_integer(500);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::BEQ, 0, 0, 0, make_cargo(20)
+        );
+
+        machine.memory().write(address, instruction.word());
+        machine.cpu().set_pc(address);
+
+        machine.cpu().set_status(Comparison::Less);
+        executor.step(machine);
+        assert(machine.cpu().pc() == Word::from_integer(501));
+
+        machine.cpu().set_pc(address);
+        machine.cpu().set_status(Comparison::Greater);
+        executor.step(machine);
+        assert(machine.cpu().pc() == Word::from_integer(501));
+    }
+    
     {
         Machine machine;
 

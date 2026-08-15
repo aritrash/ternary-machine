@@ -173,6 +173,42 @@ public:
                 machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
                 return;
             }
+            
+            case ternary::Opcode::JMP: {
+                const auto offset = ternary::Word::from_integer(instruction.immediate());
+                machine.cpu().set_pc(ALU::add(pc, offset));
+                return;
+            }
+
+            case ternary::Opcode::BEQ: {
+                if (machine.cpu().status() == Comparison::Equal) {
+                    const auto offset = ternary::Word::from_integer(instruction.immediate());
+                    machine.cpu().set_pc(ALU::add(pc, offset));
+                } else {
+                    machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+                }
+                return;
+            }
+
+            case ternary::Opcode::BGT: {
+                if (machine.cpu().status() == Comparison::Greater) {
+                    const auto offset = ternary::Word::from_integer(instruction.immediate());
+                    machine.cpu().set_pc(ALU::add(pc, offset));
+                } else {
+                    machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+                }
+                return;
+            }
+
+            case ternary::Opcode::BLT: {
+                if (machine.cpu().status() == Comparison::Less) {
+                    const auto offset = ternary::Word::from_integer(instruction.immediate());
+                    machine.cpu().set_pc(ALU::add(pc, offset));
+                } else {
+                    machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+                }
+                return;
+            }
                 
             case ternary::Opcode::CMP:
 				machine.cpu().set_status(
