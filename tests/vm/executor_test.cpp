@@ -38,6 +38,7 @@ static Instruction::Cargo make_cargo(std::int64_t value) {
 int main() {
     Executor executor;
 
+	// NOP Tests
     {
         Machine machine;
         const Word address = Word::from_integer(0);
@@ -67,7 +68,8 @@ int main() {
         assert(!machine.halted());
         assert(machine.cpu().pc() == Word::from_integer(43));
     }
-
+    
+	// HLT tests
     {
         Machine machine;
         const Word address = Word::from_integer(0);
@@ -108,7 +110,8 @@ int main() {
         assert(machine.halted());
         assert(machine.cpu().pc() == address);
     }
-
+    
+	// Arithmetic Tests
     {
         Machine machine;
         const Word address = Word::from_integer(0);
@@ -177,6 +180,7 @@ int main() {
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
     
+    // Logic Tests
     {
         Machine machine;
         const Word address = Word::from_integer(0);
@@ -251,7 +255,8 @@ int main() {
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
     
-        {
+    // SHF Tests
+    {
         Machine machine;
         const Word address = Word::from_integer(0);
 
@@ -294,6 +299,152 @@ int main() {
         assert(machine.cpu().registers().read(Register::R2) == shift);
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
+    
+    // LD - Zero Offset
+    {
+        Machine machine;
+        const Word address = Word::from_integer(100);
+        const Word value = Word::from_integer(12345);
+
+        machine.cpu().registers().write(Register::R1, address);
+        machine.memory().write(address, value);
+
+        const Instruction instruction = Instruction::encode(Opcode::LD, 2, 1, 0);
+        machine.memory().write(Word::zero(), instruction.word());
+        machine.cpu().set_pc(Word::zero());
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R2) == value);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+    // LD - Positive & Negative Offset
+    {
+        Machine machine;
+        const Word base = Word::from_integer(100);
+        const Word value = Word::from_integer(54321);
+
+        machine.cpu().registers().write(Register::R1, base);
+        machine.memory().write(Word::from_integer(105), value);
+
+        const Instruction instruction = Instruction::encode(Opcode::LD, 2, 1, 0, make_cargo(5));
+        machine.memory().write(Word::zero(), instruction.word());
+        machine.cpu().set_pc(Word::zero());
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R2) == value);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+
+    {
+        Machine machine;
+        const Word base = Word::from_integer(100);
+        const Word value = Word::from_integer(-54321);
+
+        machine.cpu().registers().write(Register::R1, base);
+        machine.memory().write(Word::from_integer(95), value);
+
+        const Instruction instruction = Instruction::encode(Opcode::LD, 2, 1, 0, make_cargo(-5));
+        machine.memory().write(Word::zero(), instruction.word());
+        machine.cpu().set_pc(Word::zero());
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R2) == value);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+    // ST - Positive & Negative Offset
+    {
+        Machine machine;
+        const Word base = Word::from_integer(200);
+        const Word value = Word::from_integer(7777);
+
+        machine.cpu().registers().write(Register::R1, value);
+        machine.cpu().registers().write(Register::R2, base);
+
+        const Instruction instruction = Instruction::encode(Opcode::ST, 0, 1, 2, make_cargo(7));
+        machine.memory().write(Word::zero(), instruction.word());
+        machine.cpu().set_pc(Word::zero());
+
+        executor.step(machine);
+
+        assert(machine.memory().read(Word::from_integer(207)) == value);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+    {
+        Machine machine;
+        const Word base = Word::from_integer(200);
+        const Word value = Word::from_integer(-7777);
+
+        machine.cpu().registers().write(Register::R1, value);
+        machine.cpu().registers().write(Register::R2, base);
+
+        const Instruction instruction = Instruction::encode(Opcode::ST, 0, 1, 2, make_cargo(-7));
+        machine.memory().write(Word::zero(), instruction.word());
+        machine.cpu().set_pc(Word::zero());
+
+        executor.step(machine);
+
+        assert(machine.memory().read(Word::from_integer(193)) == value);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+    // LEA - Positive Offsets
+    {
+        Machine machine;
+        const Word base = Word::from_integer(500);
+
+        machine.cpu().registers().write(Register::R1, base);
+
+        const Instruction instruction = Instruction::encode(Opcode::LEA, 2, 1, 0, make_cargo(25));
+        machine.memory().write(Word::zero(), instruction.word());
+        machine.cpu().set_pc(Word::zero());
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R2) == Word::from_integer(525));
+        assert(machine.memory().size() == 1);
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+    // LEA - Negative offset and no memory access
+    {
+        Machine machine;
+        const Word base = Word::from_integer(500);
+
+        machine.cpu().registers().write(Register::R1, base);
+
+        const Instruction instruction = Instruction::encode(Opcode::LEA, 2, 1, 0, make_cargo(-25));
+        machine.memory().write(Word::zero(), instruction.word());
+        machine.cpu().set_pc(Word::zero());
+
+        executor.step(machine);
+
+        assert(machine.cpu().registers().read(Register::R2) == Word::from_integer(475));
+        assert(machine.memory().read(Word::from_integer(475)) == Word::zero());
+        assert(machine.cpu().pc() == Word::from_integer(1));
+    }
+    
+    {
+        Machine machine;
+
+        machine.cpu().registers().write(Register::R1, Word::from_integer(1234));
+        machine.cpu().registers().write(Register::R2, Word::from_integer(300));
+
+        const Instruction instruction = Instruction::encode(Opcode::ST, 8, 1, 2, make_cargo(10));
+        machine.memory().write(Word::zero(), instruction.word());
+        machine.cpu().set_pc(Word::zero());
+
+        executor.step(machine);
+
+        assert(machine.memory().read(Word::from_integer(310)) == Word::from_integer(1234));
+        assert(machine.cpu().registers().read(Register::R8) == Word::zero());
+    }
+    
     
     {
         Machine machine;
@@ -380,7 +531,7 @@ int main() {
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
     
-        {
+    {
         Machine machine;
         const Word address = Word::from_integer(0);
         const Instruction instruction = Instruction::encode(Opcode::MOV, 3, 1, 0);

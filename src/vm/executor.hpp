@@ -135,6 +135,45 @@ public:
                 machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
                 return;
                 
+            case ternary::Opcode::LD: {
+                const auto base = machine.cpu().registers().read(static_cast<Register>(instruction.rs1()));
+                const auto offset = ternary::Word::from_integer(instruction.immediate());
+                const auto address = ALU::add(base, offset);
+
+                machine.cpu().registers().write(
+                    static_cast<Register>(instruction.rd()),
+                    machine.memory().read(address)
+                );
+
+                machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+                return;
+            }
+
+            case ternary::Opcode::ST: {
+                const auto data = machine.cpu().registers().read(static_cast<Register>(instruction.rs1()));
+                const auto base = machine.cpu().registers().read(static_cast<Register>(instruction.rs2()));
+                const auto offset = ternary::Word::from_integer(instruction.immediate());
+                const auto address = ALU::add(base, offset);
+
+                machine.memory().write(address, data);
+
+                machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+                return;
+            }
+
+            case ternary::Opcode::LEA: {
+                const auto base = machine.cpu().registers().read(static_cast<Register>(instruction.rs1()));
+                const auto offset = ternary::Word::from_integer(instruction.immediate());
+
+                machine.cpu().registers().write(
+                    static_cast<Register>(instruction.rd()),
+                    ALU::add(base, offset)
+                );
+
+                machine.cpu().set_pc(ternary::Word::from_integer(pc.to_integer() + 1));
+                return;
+            }
+                
             case ternary::Opcode::CMP:
 				machine.cpu().set_status(
 					ALU::compare(

@@ -409,13 +409,13 @@ The canonical textual representation of an opcode uses the characters:
 
 For example:
 
-~~~text
+```text
 nn0
 
 represents the three-trit opcode:
 
 −1, −1, 0
-~~~
+```
 
 The complete TVM opcode allocation is:
 
@@ -456,7 +456,7 @@ The opcode allocation is inherited from the legacy TPA-1 instruction vocabulary 
 Every TVM instruction occupies exactly 27 trits.
 The instruction is divided into:
 
-~~~text
+```text
 ┌─────────────────────── 27 trits ───────────────────────┐
 │                                                         │
 │                 Action Block                            │
@@ -475,7 +475,7 @@ The instruction is divided into:
 │        Immediate / Address / Offset / Payload           │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
-~~~
+```
 
 The first nine trits therefore contain:
 
@@ -494,12 +494,12 @@ The leftmost trit of a word is the Most Significant Trit (MST).
 The rightmost trit is the Least Significant Trit (LST).
 For an N-trit value:
 
-~~~text
+```text
 MST                                      LST
  │                                        │
  ▼                                        ▼
 t[N−1]  t[N−2]  ...  t[2]  t[1]  t[0]
-~~~
+```
 
 The architectural significance of each trit is therefore determined by its position within the value.
 
@@ -512,10 +512,10 @@ TVM provides nine general-purpose registers:
 Each register stores exactly one TVM Word.
 A TVM Word consists of three Trytes:
 
-~~~text
+```text
 1 Word = 3 Trytes
        = 27 trits
-~~~
+```
 
 Registers are raw ternary word registers. They do not intrinsically distinguish between integers, addresses, pointers, instruction operands, or arbitrary ternary data. The interpretation of a register value is determined by the instruction using it.
 
@@ -590,10 +590,10 @@ Although every physical instruction has the same 27-trit structure, instructions
 
 Used primarily for operations involving multiple registers:
 
-~~~text
+```text
 Opcode | Rd | Rs1 | Rs2 | Cargo
    3      2     2     2     18
-~~~
+```
 
 Examples:
 * `ADD`
@@ -609,10 +609,10 @@ Examples:
 
 Used when an instruction requires a literal value:
 
-~~~text
+```text
 Opcode | Rd | Rs1 | Rs2 | Immediate
    3      2     2     2       18
-~~~
+```
 
 Unused register fields shall be encoded as `nn` unless a future instruction definition explicitly assigns them another meaning.
 `LDI` is the initial instruction using this format.
@@ -644,9 +644,9 @@ NOP performs no architectural operation.
 **Syntax:** `ADD Rd, Rs1, Rs2`
 
 **Operation:**
-~~~text
+```text
 Rd ← Rs1 + Rs2
-~~~
+```
 The operation is performed using balanced-ternary arithmetic.
 The precise result-width and overflow semantics remain an architectural item to be finalized.
 
@@ -655,9 +655,9 @@ The precise result-width and overflow semantics remain an architectural item to 
 **Syntax:** `SUB Rd, Rs1, Rs2`
 
 **Operation:**
-~~~text
+```text
 Rd ← Rs1 − Rs2
-~~~
+```
 The legacy architecture describes subtraction as inversion of Operand B followed by ternary addition.
 The precise result-width and overflow semantics remain an architectural item to be finalized.
 
@@ -666,9 +666,9 @@ The precise result-width and overflow semantics remain an architectural item to 
 **Syntax:** `MUL Rd, Rs1, Rs2`
 
 **Operation:**
-~~~text
+```text
 Rd ← Rs1 × Rs2
-~~~
+```
 The multiplication result shall be reduced according to the finalized TVM Word arithmetic rules.
 
 ### 14.5 CMP — Compare
@@ -676,18 +676,18 @@ The multiplication result shall be reduced according to the finalized TVM Word a
 **Syntax:** `CMP Rs1, Rs2`
 
 **Operation:**
-~~~text
+```text
 compare Rs1 and Rs2
-~~~
+```
 CMP shall not modify the destination register.
 The comparison result shall be represented by the STATUS architectural state.
 The legacy architecture defines the comparison result as:
 
-~~~text
+```text
 −1  → less than
  0  → equal
 +1  → greater than
-~~~
+```
 This result is subsequently consumed by conditional branch instructions.
 
 ### 14.6 TAND — Ternary AND
@@ -695,9 +695,9 @@ This result is subsequently consumed by conditional branch instructions.
 **Syntax:** `TAND Rd, Rs1, Rs2`
 
 The operation is defined trit-wise using the mathematical minimum:
-~~~text
+```text
 Rd[i] ← min(Rs1[i], Rs2[i])
-~~~
+```
 for every trit position `i`.
 
 ### 14.7 TOR — Ternary OR
@@ -705,9 +705,9 @@ for every trit position `i`.
 **Syntax:** `TOR Rd, Rs1, Rs2`
 
 The operation is defined trit-wise using the mathematical maximum:
-~~~text
+```text
 Rd[i] ← max(Rs1[i], Rs2[i])
-~~~
+```
 for every trit position `i`.
 
 ### 14.8 TXOR — Ternary XOR
@@ -722,11 +722,11 @@ The precise mathematical definition and truth table shall be frozen in the ALU s
 **Syntax:** `TNOT Rd, Rs1`
 
 The operation inverts the sign of every trit:
-~~~text
+```text
 −1 → +1
  0 →  0
 +1 → −1
-~~~
+```
 
 ### 14.10 SHF — Shift
 **Opcode:** `0nn`
@@ -747,9 +747,9 @@ A shift whose magnitude is greater than or equal to 27 produces a zero Word.
 **Syntax:** `LDI Rd, immediate`
 
 The instruction extracts the 18-trit Cargo Block and places the represented value into Rd.
-~~~text
+```text
 Rd ← sign_extend_or_define(immediate)
-~~~
+```
 The exact extension rule from 18 trits to the 27-trit Word shall be specified by the numerical representation section.
 
 ### 15.2 MOV — Move
@@ -757,9 +757,9 @@ The exact extension rule from 18 trits to the 27-trit Word shall be specified by
 **Syntax:** `MOV Rd, Rs1`
 
 **Operation:**
-~~~text
+```text
 Rd ← Rs1
-~~~
+```
 No memory access is performed.
 
 ### 15.3 LD — Load
@@ -768,9 +768,9 @@ No memory access is performed.
 
 LD reads a value from virtual memory and places it into Rd.
 The effective address calculation shall be:
-~~~text
+```text
 effective_address = base + offset
-~~~
+```
 where the identity of the base register and exact offset semantics shall be finalized by the memory model.
 
 ### 15.4 ST — Store
@@ -786,9 +786,40 @@ The exact assignment of source/base registers shall be finalized together with t
 
 LEA computes an effective address without accessing the referenced memory.
 Conceptually:
-~~~text
+```text
 Rd ← address(Rs1 + offset)
-~~~
+```
+
+### 15.6 Memory Addressing Convention
+
+TVM memory instructions use a base-plus-signed-offset addressing model.
+
+The effective address is computed as:
+
+    effective_address = base + sign_extended(offset)
+
+The offset is encoded in the 18-trit Cargo Block and is interpreted as a signed balanced-ternary integer.
+
+The instruction-specific register assignments are:
+
+| Instruction | Rd | Rs1 | Rs2 | Cargo |
+|---|---|---|---|---|
+| LD | Destination | Base | Unused | Signed Offset |
+| ST | Unused | Source/Data | Base | Signed Offset |
+| LEA | Destination | Base | Unused | Signed Offset |
+
+Thus:
+
+    LD Rd, Rs1, offset
+        Rd ← Memory[Rs1 + offset]
+
+    ST Rs1, Rs2, offset
+        Memory[Rs2 + offset] ← Rs1
+
+    LEA Rd, Rs1, offset
+        Rd ← Rs1 + offset
+
+All effective addresses are 27-trit Words. Memory is addressed in Word units.
 
 ## 16. Control-Flow Instructions
 
@@ -804,9 +835,9 @@ The exact target representation shall be finalized as part of the PC and control
 **Syntax:** `BEQ target`
 
 The branch is taken when:
-~~~text
+```text
 STATUS = 0
-~~~
+```
 Otherwise execution continues sequentially.
 
 ### 16.3 BGT — Branch if Greater Than
@@ -814,9 +845,9 @@ Otherwise execution continues sequentially.
 **Syntax:** `BGT target`
 
 The branch is taken when:
-~~~text
+```text
 STATUS = +1
-~~~
+```
 Otherwise execution continues sequentially.
 
 ### 16.4 BLT — Branch if Less Than
@@ -824,9 +855,9 @@ Otherwise execution continues sequentially.
 **Syntax:** `BLT target`
 
 The branch is taken when:
-~~~text
+```text
 STATUS = −1
-~~~
+```
 Otherwise execution continues sequentially.
 
 ### 16.5 CALL — Subroutine Call
@@ -835,10 +866,10 @@ Otherwise execution continues sequentially.
 
 CALL transfers execution to a subroutine and preserves the return location on the stack.
 Conceptually:
-~~~text
+```text
 push return_address
 PC ← target
-~~~
+```
 The exact value pushed and the precise stack update semantics shall be defined by the SP/PC architecture.
 
 ### 16.6 RET — Return
@@ -847,9 +878,9 @@ The exact value pushed and the precise stack update semantics shall be defined b
 
 RET restores a previously saved return address from the stack.
 Conceptually:
-~~~text
+```text
 PC ← pop()
-~~~
+```
 
 ## 17. System and I/O Instructions
 
@@ -920,27 +951,27 @@ The exact stack growth direction and push/pop convention remain to be finalized.
 TVM provides a STATUS architectural state.
 The minimum comparison state is:
 
-~~~text
+```text
 −1
  0
 +1
-~~~
+```
 
 and is established by `CMP`.
 Conditional branch instructions consume this state:
 
-~~~text
+```text
 STATUS =  0 → BEQ
 STATUS = +1 → BGT
 STATUS = −1 → BLT
-~~~
+```
 
 Additional status flags, such as arithmetic overflow or interrupt state, may be introduced only if required by later architectural decisions.
 
 ## 21. Instruction Execution Model
 A conforming TVM implementation shall present the following architectural execution sequence:
 
-~~~text
+```text
 ┌──────────┐
 │  Fetch   │
 └────┬─────┘
@@ -968,7 +999,7 @@ A conforming TVM implementation shall present the following architectural execut
 ┌──────────┐
 │ Update PC│
 └──────────┘
-~~~
+```
 
 This is a description of architectural behavior, not a requirement for a particular microarchitectural pipeline.
 An emulator may implement the entire sequence as a single function call, while a future physical implementation may divide it into multiple pipeline stages.
@@ -1015,7 +1046,7 @@ The precise privilege-state representation shall be finalized before the first k
 TVM shall provide a unified virtual address space for instructions and data.
 The architecture shall eventually support:
 
-~~~text
+```text
 Virtual Address
       │
       ▼
@@ -1026,7 +1057,7 @@ Virtual Machine Physical Address
       │
       ▼
 Virtual Memory
-~~~
+```
 
 The physical host's address width shall not determine the guest-visible TVM address width.
 The exact address width, page size, translation hierarchy, access permissions, and page-fault semantics remain architectural decisions to be finalized.
@@ -1049,7 +1080,7 @@ The exact distinction between memory-mapped I/O and explicit IN/OUT operations r
 The TVM architecture shall be independent of the physical host processor.
 The host implementation shall provide:
 
-~~~text
+```text
 TVM
  │
  ▼
@@ -1058,7 +1089,7 @@ Host Abstraction
  ├── x86-64
  │
  └── AArch64
-~~~
+```
 
 Host-specific mechanisms may include:
 * memory allocation;
