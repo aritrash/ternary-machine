@@ -58,3 +58,7 @@ add_test(NAME context_test COMMAND context_test)
 add_executable(vector_table_test tests/vm/vector_table_test.cpp)
 target_include_directories(vector_table_test PRIVATE src)
 add_test(NAME vector_table_test COMMAND vector_table_test)
+
+add_executable(lexer_test tests/assembler/lexer_test.cpp)
+target_include_directories(lexer_test PRIVATE src)
+add_test(NAME lexer_test COMMAND lexer_test)

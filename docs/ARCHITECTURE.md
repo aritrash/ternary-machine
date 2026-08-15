@@ -1827,7 +1827,7 @@ Each vector-table entry occupies exactly one Word.
 A vector entry contains the 27-trit virtual address of the corresponding handler.
 The vector table is divided into three regions:
 
-~~~text
+```text
                     VECTOR_BASE
                          │
                          ▼
@@ -1844,17 +1844,17 @@ The vector table is divided into three regions:
               │       ...           │
               │ Exception Vector 26 │  27 Words
               └─────────────────────┘
-~~~
+```
 
 Therefore:
 
-~~~text
+```text
 SYSTEM_CALL_VECTOR = VECTOR_BASE
 
 INTERRUPT_VECTOR_BASE = VECTOR_BASE + 1
 
 EXCEPTION_VECTOR_BASE = VECTOR_BASE + 28
-~~~
+```
 
 The complete vector table occupies 55 Words.
 
@@ -1888,7 +1888,7 @@ Instead, the common system-call handler receives control and dispatches the requ
 
 Conceptually:
 
-~~~text
+```text
 User
   │
   │ SYS
@@ -1900,7 +1900,7 @@ Kernel system-call handler
   │
   ▼
 dispatch using R0
-~~~
+```
 
 This keeps the hardware entry mechanism independent of the operating system's system-call namespace.
 
@@ -2111,12 +2111,12 @@ the handler address is obtained from:
 The resulting Word becomes the new PC after the interrupt context has been saved and Kernel mode has been entered.
 Therefore:
 
-~~~text
+```text
 cause 0  → Memory[INTERRUPT_VECTOR_BASE + 0]
 cause 1  → Memory[INTERRUPT_VECTOR_BASE + 1]
 ...
 cause 26 → Memory[INTERRUPT_VECTOR_BASE + 26]
-~~~
+```
 
 Each interrupt cause therefore has an independent architectural entry point.
 
@@ -2138,12 +2138,12 @@ the handler address is obtained from:
 The resulting Word becomes the new PC after the exception context has been saved and Kernel mode has been entered.
 Therefore:
 
-~~~text
+```text
 cause 0  → Memory[EXCEPTION_VECTOR_BASE + 0]
 cause 1  → Memory[EXCEPTION_VECTOR_BASE + 1]
 ...
 cause 26 → Memory[EXCEPTION_VECTOR_BASE + 26]
-~~~
+```
 
 Interrupt and exception causes therefore occupy independent namespaces.
 
@@ -2153,7 +2153,7 @@ Handler selection is performed entirely through virtual memory.
 The processor does not encode handler addresses directly into `SYS`, interrupt, or exception operations.
 The resolution rules are:
 
-~~~text
+```text
 SYS:
     handler = Memory[SYSTEM_CALL_VECTOR]
 
@@ -2162,7 +2162,7 @@ Interrupt(c):
 
 Exception(c):
     handler = Memory[EXCEPTION_VECTOR_BASE + c]
-~~~
+```
 
 The selected handler address is then loaded into the PC as part of the corresponding execution-state transition.
 This allows Kernel software to relocate individual handlers simply by changing their vector entries.
@@ -2194,24 +2194,24 @@ The vector table therefore uses the same Word-sized address representation as al
 
 After reset, the processor enters Kernel mode with:
 
-~~~text
+```text
 PC  = 0
 SP  = 0
 KSP = 0
 PL  = Kernel
 STATUS = Equal
-~~~
+```
 
 The vector table is not populated with mandatory handler addresses by the hardware reset operation.
 Instead, the initial Kernel software is responsible for initializing the vector table before enabling normal User-mode execution or accepting external interrupts.
 
 Kernel initialization therefore performs conceptually:
 
-~~~text
+```text
 Memory[SYSTEM_CALL_VECTOR] = system_call_handler
 Memory[INTERRUPT_VECTOR_BASE + i] = interrupt_handler_i
 Memory[EXCEPTION_VECTOR_BASE + i] = exception_handler_i
-~~~
+```
 
 for every vector that the execution environment intends to support.
 Unsupported or uninitialized vectors contain no architecturally valid handler address.
@@ -2317,7 +2317,7 @@ Such an extension shall not change the semantics of the existing vector lookup m
 
 The complete entry-point resolution mechanism is therefore:
 
-~~~text
+```text
 System Call:
 
     SYS
@@ -2349,7 +2349,7 @@ Memory[29 + c]
         │
         ▼
 Exception handler
-~~~
+```
 
 where all addresses and arithmetic are performed in the native 27-trit Word domain.
 
@@ -2370,4 +2370,329 @@ The following invariants shall hold:
 * User-mode software cannot modify vector-table state.
 * Every accepted transition saves sufficient context for `IRET` to restore the previous execution state.
 
+# 37. TVM Native Executable Format (.trn)
 
+## 37.1 Overview
+The TVM Native Executable Format (`.trn`) is the native executable representation of the Ternary Virtual Machine.
+A `.trn` file shall be a pure ternary representation. Its serialized contents shall contain only the three TVM trit symbols:
+
+* `n`
+* `0`
+* `1`
+
+where:
+* `n` represents the ternary value −1,
+* `0` represents the ternary value 0,
+* `1` represents the ternary value +1.
+
+The `.trn` format shall not depend upon the host machine's byte ordering, integer representation, pointer width, character encoding, or binary executable format.
+The format is intended to provide the equivalent architectural role of a conventional native executable format while remaining natively represented in the TVM ternary domain.
+A `.trn` file shall therefore be regarded as a serialized TVM memory image with executable metadata and section information rather than as a conventional byte-oriented executable.
+
+## 37.2 Ternary File Representation
+The physical representation of a `.trn` file shall consist exclusively of the characters:
+
+* `n`
+* `0`
+* `1`
+
+No other character shall constitute executable file data.
+Whitespace, line separators, or other presentation characters shall not form part of the canonical `.trn` representation.
+The canonical representation shall therefore be a contiguous sequence of ternary symbols.
+For example:
+
+```text
+n0010n1...
+```
+
+represents a sequence of ternary digits and does not represent ASCII text, hexadecimal data, or binary bytes.
+Implementations may provide human-readable formatting tools which introduce line breaks or grouping for display purposes, but such formatting shall not alter the underlying ternary data.
+
+## 37.3 Word Alignment
+The logical contents of a `.trn` file shall be organized into TVM Words.
+Each TVM Word contains exactly:
+
+`27 trits`
+
+All executable-format structures shall therefore occupy an integral number of 27-trit Words.
+The canonical serialized representation shall preserve this alignment.
+Consequently:
+
+`1 TVM Word = 27 ternary symbols`
+
+and the `.trn` file shall contain a total number of ternary symbols divisible by 27.
+This requirement allows a `.trn` file to be interpreted directly as a sequence of TVM Words without introducing a host-dependent byte-packing layer.
+
+## 37.4 Executable File Organization
+A `.trn` executable shall consist of the following logical regions:
+
+```text
+┌──────────────────────────────┐
+│          File Header         │
+├──────────────────────────────┤
+│        Section Table         │
+├──────────────────────────────┤
+│         Symbol Table         │
+├──────────────────────────────┤
+│            .text             │
+├──────────────────────────────┤
+│            .data             │
+├──────────────────────────────┤
+│           .rodata            │
+├──────────────────────────────┤
+│             .bss             │
+└──────────────────────────────┘
+```
+
+The presence and ordering of optional sections shall be specified by the executable-format version.
+The initial TVM executable format shall recognize the following sections:
+
+* `.text` — executable instruction words.
+* `.data` — initialized writable data.
+* `.rodata` — initialized read-only data.
+* `.bss` — zero-initialized writable storage.
+
+The executable shall contain sufficient metadata for a loader to determine the location, size, and intended memory properties of each section.
+
+## 37.5 File Header
+Every `.trn` executable shall begin with a fixed-format file header.
+The header shall identify at minimum:
+
+* TVM architecture identifier.
+* ISA version.
+* Executable-format version.
+* File flags.
+* Entry-point address.
+* Start-symbol identifier.
+* Section-table location.
+* Section count.
+* Symbol-table location.
+* Symbol count.
+* Memory-layout information.
+
+All header fields shall themselves be represented using TVM ternary encoding.
+The header shall not contain host-specific binary structures.
+The header shall occupy an integral number of TVM Words.
+
+## 37.6 Architecture Identification
+The executable shall contain an architecture identifier allowing a loader to determine whether the file targets the TVM architecture.
+The architecture identifier shall be a numeric ternary value rather than a textual string.
+An implementation encountering an unsupported architecture identifier shall reject the executable before attempting to execute its contents.
+
+## 37.7 ISA and Executable-Format Versions
+The executable shall contain separate version identifiers for:
+
+* Architecture / ISA version
+* Executable-format version
+
+These values shall be independently versioned.
+The ISA version determines the interpretation of instructions and architectural state.
+The executable-format version determines the interpretation of the `.trn` container itself.
+A loader shall reject an executable whose format version it does not support.
+An executable shall not silently reinterpret a newer format using an older format definition.
+
+## 37.8 Entry Point
+Every executable shall define an entry point.
+The entry point shall be represented as a 27-trit TVM Word address.
+The entry point shall identify the first instruction to be executed after the executable has been loaded and the initial execution state has been established.
+Unless otherwise specified by a future executable-format revision, the conventional entry symbol shall be:
+
+`_start`
+
+The assembler shall permit `_start` to be explicitly declared and shall use it as the default entry symbol.
+If `_start` is absent and no explicit entry point is supplied, the assembler shall reject the source program.
+
+## 37.9 Start Symbol
+The executable shall preserve the identity of its start symbol through a numeric symbol identifier.
+The textual name:
+
+`_start`
+
+shall exist at the assembly-language and symbol-table level, but executable metadata shall reference symbols using numeric identifiers or resolved addresses rather than embedding host character strings into the ternary executable representation.
+For example:
+
+```text
+_start:
+    LDI R1, 42
+    HLT
+```
+
+shall result in a symbol-table entry conceptually equivalent to:
+
+```text
+Symbol ID → _start
+Address   → .text + 0
+```
+
+The executable header shall identify this symbol as the program entry symbol.
+
+## 37.10 Section Table
+The section table shall describe every loadable or executable section contained within the `.trn` file.
+Each section descriptor shall identify at minimum:
+
+* section type,
+* section flags,
+* file location,
+* section size,
+* virtual memory address,
+* alignment requirements.
+
+All addresses and sizes shall use TVM-native ternary values.
+The initial section types shall include:
+
+* `TEXT`
+* `DATA`
+* `RODATA`
+* `BSS`
+
+The section table itself shall be Word-aligned.
+
+## 37.11 .text Section
+The `.text` section contains executable TVM instructions.
+Each instruction occupies exactly one TVM Word:
+
+`1 instruction = 27 trits`
+
+The `.text` section shall therefore contain an integral number of 27-trit Words.
+Instructions shall use the instruction encoding defined by the TVM ISA.
+The assembler shall generate `.text` contents using the canonical TVM instruction encoding and shall not implement an independent instruction encoding scheme.
+
+## 37.12 .data Section
+The `.data` section contains initialized writable data.
+Data shall be represented using TVM-native ternary Words.
+The section shall be loaded into writable virtual memory before execution begins.
+The executable shall provide sufficient metadata for the loader to determine the destination address and size of the initialized data.
+
+## 37.13 .rodata Section
+The `.rodata` section contains initialized read-only data.
+Its contents shall use the TVM ternary representation.
+The loader shall place `.rodata` according to the memory-layout and protection rules defined by the TVM memory and privilege architecture.
+Executable code shall not modify `.rodata` under a conforming implementation.
+
+## 37.14 .bss Section
+The `.bss` section represents zero-initialized writable storage.
+`.bss` shall not require explicit storage for every zero-valued Word in the executable file.
+Instead, its metadata shall specify the required memory extent.
+During loading, the loader shall allocate the corresponding virtual-memory region and initialize every Word in the region to:
+
+`000000000000000000000000000`
+
+The physical representation of `.bss` therefore consists primarily of metadata describing its required size rather than an explicit sequence of zero Words.
+
+## 37.15 Symbol Table
+A `.trn` executable may contain a symbol table.
+Symbols shall be identified internally using numeric symbol identifiers.
+A symbol shall contain, at minimum:
+
+* symbol identifier,
+* symbol type,
+* section identifier,
+* address or section-relative offset,
+* symbol visibility.
+
+The initial executable format shall support at least:
+
+* `LOCAL`
+* `GLOBAL`
+* `ENTRY`
+
+symbols.
+The assembler shall maintain symbolic names during assembly but the serialized executable representation shall use ternary-encoded symbol metadata.
+
+## 37.16 Relocation and Symbol Resolution
+The initial `.trn` executable format shall support fully resolved executables.
+The assembler shall resolve local labels and symbols before producing a runnable `.trn` executable.
+Future revisions may introduce explicit relocation records to support separately assembled object files and a linker.
+Until relocation is formally specified, unresolved symbols shall constitute an assembly error and shall prevent generation of a runnable `.trn` executable.
+
+## 37.17 Memory Layout
+The executable header and section table shall provide sufficient information for the loader to construct the initial TVM virtual-memory image.
+At minimum, the loader shall be able to determine:
+
+* `.text`  → executable memory
+* `.rodata` → read-only memory
+* `.data`  → writable initialized memory
+* `.bss`   → writable zero-initialized memory
+
+The exact virtual addresses shall be represented using 27-trit TVM Words.
+The executable format shall not require a particular host operating-system memory layout.
+
+## 37.18 Loading Procedure
+Loading a `.trn` executable shall conceptually proceed as follows:
+
+1. Validate ternary file representation.
+2. Validate Word alignment.
+3. Validate file header.
+4. Validate architecture identifier.
+5. Validate ISA version.
+6. Validate executable-format version.
+7. Read section table.
+8. Construct `.text`.
+9. Construct `.rodata`.
+10. Construct `.data`.
+11. Allocate and zero `.bss`.
+12. Resolve the entry point.
+13. Initialize CPU execution state.
+14. Set PC to the executable entry point.
+15. Begin instruction execution.
+
+The loader shall reject malformed or architecturally incompatible executables before beginning execution.
+
+## 37.19 Initial CPU State
+After loading an executable and before its first instruction is executed, the loader shall establish the initial CPU state according to the TVM execution-state specification.
+At minimum:
+
+* `PC`     ← executable entry point
+* `STATUS` ← Equal
+
+The initial privilege level, stack pointer, register state, interrupt state, and other execution-state fields shall follow the privilege and execution-state architecture.
+The executable itself shall not directly encode host-specific CPU state.
+
+## 37.20 Executable Validation
+A conforming loader shall validate at minimum:
+
+* ternary-symbol validity,
+* Word alignment,
+* architecture compatibility,
+* ISA compatibility,
+* executable-format compatibility,
+* section boundaries,
+* section sizes,
+* entry-point validity,
+* symbol-table bounds,
+* memory-layout consistency.
+
+Malformed executables shall not be passed to the instruction executor.
+
+## 37.21 Canonical Representation
+The canonical `.trn` representation shall satisfy all of the following:
+
+* Only `n`, `0`, and `1` occur as data symbols.
+* Total trit count is divisible by 27.
+* All structures are Word-aligned.
+* All numeric metadata uses TVM ternary encoding.
+* Instruction words use the canonical TVM ISA encoding.
+* No host byte order is involved.
+* No host binary executable format is required.
+
+A `.trn` executable shall therefore be directly interpretable as a sequence of TVM-native ternary Words.
+
+## 37.22 Future Extensions
+The initial executable format is intentionally designed to permit future extensions without changing the fundamental ternary representation.
+Future revisions may introduce:
+
+* relocation records,
+* dynamic linking,
+* shared libraries,
+* additional section types,
+* debugging information,
+* exception metadata,
+* privilege metadata,
+* capability information,
+* memory protection attributes,
+* executable signatures,
+* cryptographic integrity information,
+* compressed sections,
+* separate object-file and executable-file formats.
+
+Such extensions shall preserve the fundamental requirement that the canonical `.trn` representation remains native to the TVM ternary domain.
