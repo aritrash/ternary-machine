@@ -50,3 +50,11 @@ add_test(NAME executor_test COMMAND executor_test)
 add_executable(alu_test tests/vm/alu_test.cpp)
 target_link_libraries(alu_test PRIVATE ternary_machine)
 add_test(NAME alu_test COMMAND alu_test)
+
+add_executable(context_test tests/vm/context_test.cpp)
+target_link_libraries(context_test PRIVATE ternary_machine)
+add_test(NAME context_test COMMAND context_test)
+
+add_executable(vector_table_test tests/vm/vector_table_test.cpp)
+target_include_directories(vector_table_test PRIVATE src)
+add_test(NAME vector_table_test COMMAND vector_table_test)

@@ -1374,3 +1374,1000 @@ The stack is located within the same unified Word-addressed virtual memory space
 `SP` identifies a Word location.
 
 Stack operations therefore operate on complete Words.
+
+## 35. Privilege, Interrupt, and System-Call Architecture
+
+This section defines the architectural execution-state model required by
+`SYS`, `IRET`, interrupts, and protected kernel execution.
+
+The TVM defines two privilege levels:
+
+- **User mode**
+- **Kernel mode**
+
+User mode is the normal execution environment for application programs.
+Kernel mode is the privileged execution environment responsible for system
+services, interrupt handling, and protected machine operations.
+
+---
+
+### 35.1 Privilege Levels
+
+TVM defines the following privilege levels:
+
+| Value | Level | Description |
+|---|---|---|
+| `0` | User | Unprivileged application execution |
+| `1` | Kernel | Privileged operating-system execution |
+
+The architectural CPU state therefore contains a **Privilege Level (PL)**
+field.
+
+After reset, the processor enters:
+
+```text
+PL = Kernel
+```
+
+This permits the initial software environment to establish the kernel state
+before transferring control to user software.
+
+Only Kernel mode may perform privileged execution mechanisms, including:
+
+- system-call entry handling;
+- interrupt and exception handling;
+- modification of privileged execution state;
+- return from interrupt or system-call context.
+
+Normal arithmetic, register, memory, and control-flow instructions are not
+privileged merely because they execute while the processor is in Kernel mode.
+
+### 35.2 Execution-State Model
+
+The complete architectural execution state consists of:
+
+- General Registers
+- Program Counter (PC)
+- Stack Pointer (SP)
+- Status
+- Privilege Level (PL)
+- Kernel Stack Pointer (KSP)
+
+The general-purpose register file contains the nine architectural Word
+registers defined elsewhere in this specification.
+
+All state elements are represented using the TVM's native 27-trit Word
+domain unless otherwise specified.
+
+SP identifies the active stack.
+
+KSP identifies the kernel stack used during transitions from User mode into
+Kernel mode.
+
+While executing in User mode:
+
+```
+SP  = user stack pointer
+KSP = kernel stack pointer
+```
+
+While executing in Kernel mode:
+
+```
+SP  = kernel stack pointer
+KSP = kernel stack pointer
+```
+
+The distinction between the user and kernel stack is preserved through the
+saved execution context.
+
+### 35.3 User-to-Kernel Transition
+
+TVM provides two architectural mechanisms for entering Kernel mode:
+
+Synchronous entry through `SYS`
+Asynchronous entry through an interrupt or exception
+
+Both mechanisms create a protected execution context and transfer control to
+Kernel mode.
+
+A transition from User mode to Kernel mode performs the following conceptual
+operations:
+
+- save current execution context
+- switch to Kernel mode
+- switch to kernel stack
+- record transition cause
+- load handler PC
+- begin Kernel execution
+
+The transition mechanism is responsible for preserving enough state for
+IRET to restore the interrupted or calling User execution environment.
+
+Kernel-to-User transitions are only permitted through the architectural
+return mechanism defined by `IRET`.
+
+### 35.4 System Call Entry
+
+SYS provides synchronous entry into the Kernel.
+
+When executed while in User mode, `SYS` performs:
+
+- return_PC = PC + 1
+- save execution context
+- PL ← Kernel
+- SP ← KSP
+- PC ← system-call entry address
+
+The instruction immediately following `SYS` is therefore the return point of
+the system call.
+
+The system-call entry address is an architectural constant defined by the
+TVM system-call vector.
+
+The system-call transition records:
+
+```
+cause = SystemCall
+```
+
+in the saved execution context.
+
+SYS executed while already in Kernel mode is permitted and is treated as a
+nested system-call request. The existing Kernel execution context is not
+discarded; a new context frame is created on the active Kernel stack.
+
+### 35.5 System-Call ABI
+
+The TVM system-call ABI uses the general-purpose registers for argument and
+result passing.
+
+The convention is:
+
+- R0 = system-call number
+- R1 = argument 0
+- R2 = argument 1
+- R3 = argument 2
+- R4 = argument 3
+- R5 = argument 4
+- R6 = argument 5
+
+Additional arguments may be passed through memory using pointers supplied in
+the argument registers.
+
+The system-call return convention is:
+
+1. R0 = return value
+2. R7 = error code
+
+R8 is reserved for future ABI extensions and shall not be assigned a
+system-call meaning by the base TVM ABI.
+
+The system-call number namespace is implementation-defined by the operating
+system environment and is not encoded directly into the `SYS` instruction.
+
+A successful system call returns:
+```
+R7 = 0
+```
+A failed system call returns:
+```
+R7 != 0
+```
+The interpretation of individual error codes is defined by the operating
+system ABI rather than by the base TVM architecture.
+
+### 35.6 Saved Execution Context
+
+Every transition from User mode into Kernel mode creates a saved execution
+context.
+
+The context contains:
+
+1. General Registers R0-R8
+2. PC
+3. SP
+4. STATUS
+5. PL
+6. Transition Cause
+
+The saved context is stored as a context frame on the Kernel stack.
+
+The context frame therefore contains the complete architectural state
+required to resume the interrupted or calling execution environment.
+
+The Kernel Stack Pointer (KSP) identifies the location of the active
+Kernel stack.
+
+The exact physical layout of the context frame is an ABI concern and shall
+be defined separately from the logical architectural contents.
+
+### 35.7 Interrupt Entry
+
+Interrupts are asynchronous transfers from normal execution into Kernel
+mode.
+
+An interrupt is recognized at an instruction boundary.
+
+When an interrupt is accepted, the processor:
+
+- save current execution context
+- record interrupt cause
+- PL ← Kernel
+- SP ← KSP
+- PC ← interrupt handler address
+
+The saved PC identifies the next instruction that would have executed if
+the interrupt had not occurred.
+
+Consequently, after successful interrupt return:
+```
+PC ← saved PC
+```
+and execution resumes at the interrupted instruction boundary.
+
+Interrupt sources are identified by an architectural interrupt cause value.
+
+The mapping between interrupt causes and handler addresses is defined by the
+TVM interrupt vector mechanism.
+
+### 35.8 Exception Entry
+
+Architectural exceptions use the same execution-state transition mechanism
+as interrupts.
+
+When an exception is raised:
+
+- save current execution context
+- record exception cause
+- PL ← Kernel
+- SP ← KSP
+- PC ← exception handler address
+
+The saved context permits the Kernel to inspect the interrupted state and
+determine whether execution can safely continue.
+
+The distinction between an interrupt and an exception is represented by the
+transition cause.
+
+### 35.9 Context Cause
+
+Every saved Kernel context contains a transition cause.
+
+The base TVM defines at least:
+
+- SystemCall
+- Interrupt
+- Exception
+
+The cause allows a common Kernel entry mechanism to determine why execution
+entered Kernel mode.
+
+The numerical encoding of causes is reserved for the privilege and ABI
+specification.
+
+### 35.10 IRET — Context Restoration
+
+IRET is the architectural mechanism for returning from a Kernel execution
+context.
+
+IRET restores the most recently saved execution context:
+
+- restore General Registers
+- restore PC
+- restore SP
+- restore STATUS
+- restore PL
+- discard context frame
+
+The restored SP is the stack pointer that was active before the Kernel
+transition.
+
+If the restored privilege level is User mode, execution resumes in User
+mode using the restored User stack.
+
+Conceptually:
+```text
+Kernel
+  │
+  │ IRET
+  ▼
+restored execution context
+  │
+  ▼
+previous privilege level
+```
+IRET therefore serves as the return mechanism for:
+
+- system calls;
+- interrupts;
+- exceptions.
+
+### 35.11 Privilege Enforcement
+
+The following operations are privileged:
+
+- executing IRET;
+- modifying the architectural privilege state;
+- modifying KSP;
+- modifying interrupt configuration;
+- modifying system-call configuration;
+- entering or modifying protected Kernel execution state.
+
+Attempts by User-mode software to directly perform privileged operations
+result in an architectural privilege exception.
+
+User-mode software cannot directly transition to Kernel mode except through
+an architectural entry mechanism such as SYS or an accepted interrupt.
+
+### 35.12 Nested Kernel Execution
+
+Kernel execution may itself be interrupted when the architectural interrupt
+state permits nested interrupts.
+
+Each accepted transition creates an independent context frame.
+
+Therefore, contexts form a stack:
+
+        ┌─────────────────────┐
+        │ Context N           │
+        ├─────────────────────┤
+        │ Context N-1         │
+        ├─────────────────────┤
+        │ Context N-2         │
+        ├─────────────────────┤
+        │ ...                 │
+        └─────────────────────┘
+                 ▲
+                 │
+                KSP
+
+IRET always restores the most recently created context.
+
+Nested context handling therefore follows strict last-in-first-out
+semantics.
+
+### 35.13 System Call and Interrupt Return
+
+A system call and an interrupt both return through IRET.
+
+For a system call:
+```text
+User
+  │
+  │ SYS
+  ▼
+Kernel
+  │
+  │ IRET
+  ▼
+User
+```
+
+For an interrupt:
+
+```text
+User
+  │
+  │ interrupt
+  ▼
+Kernel
+  │
+  │ IRET
+  ▼
+User
+```
+
+The distinction between these transitions is retained in the saved cause,
+but the architectural restoration mechanism is identical.
+
+### 35.14 Initial Kernel State
+
+After reset:
+
+- PL  = Kernel
+- PC  = 0
+- SP  = 0
+- KSP = 0
+- STATUS = Equal
+
+The reset environment is therefore a privileged execution environment.
+
+The initial Kernel software is responsible for establishing:
+
+- the Kernel stack;
+- the system-call entry address;
+- the interrupt vector configuration;
+- the User execution environment;
+- the initial User stack;
+- any operating-system ABI state.
+
+The mechanism used by Kernel software to transfer control into User mode is
+defined by the privilege implementation and shall preserve the architectural
+requirements of the User execution state.
+
+### 35.15 Architectural Invariants
+
+The following invariants shall hold:
+
+- User-mode execution cannot directly modify privilege state.
+- Every User-to-Kernel transition creates a saved execution context.
+- Every saved context contains sufficient state for complete restoration.
+- IRET restores the most recently saved context.
+- Context frames are restored in last-in-first-out order.
+- User execution uses the User SP; Kernel execution uses the Kernel stack.
+- SYS resumes at the instruction immediately following SYS.
+- An interrupt resumes at the saved instruction boundary.
+- IRET is the only architectural mechanism for returning from a saved
+- Kernel execution context.
+
+System-call arguments and results follow the TVM system-call ABI defined
+above.
+
+# 36. System-Call and Interrupt Vector Architecture
+
+This section defines how TVM resolves system-call, interrupt, and exception entry points.
+
+All vector addresses, vector entries, handler addresses, and vector-base values are represented using the native 27-trit Word domain.
+
+The vector mechanism is entirely virtual and is part of the TVM architectural machine model.
+
+---
+
+## 36.1 Vector Table
+
+TVM maintains a fixed vector table in virtual memory.
+
+The vector table is located at the architectural address:
+
+`VECTOR_BASE = 1`
+
+The reset address `0` is therefore reserved for the initial Kernel entry point and is not occupied by the vector table.
+Each vector-table entry occupies exactly one Word.
+A vector entry contains the 27-trit virtual address of the corresponding handler.
+The vector table is divided into three regions:
+
+~~~text
+                    VECTOR_BASE
+                         │
+                         ▼
+              ┌─────────────────────┐
+              │ System Call Vector  │  1 Word
+              ├─────────────────────┤
+              │ Interrupt Vector 0  │
+              │ Interrupt Vector 1  │
+              │       ...           │
+              │ Interrupt Vector 26 │  27 Words
+              ├─────────────────────┤
+              │ Exception Vector 0  │
+              │ Exception Vector 1  │
+              │       ...           │
+              │ Exception Vector 26 │  27 Words
+              └─────────────────────┘
+~~~
+
+Therefore:
+
+~~~text
+SYSTEM_CALL_VECTOR = VECTOR_BASE
+
+INTERRUPT_VECTOR_BASE = VECTOR_BASE + 1
+
+EXCEPTION_VECTOR_BASE = VECTOR_BASE + 28
+~~~
+
+The complete vector table occupies 55 Words.
+
+## 36.2 Vector Causes
+
+Interrupts and exceptions are identified by a cause value.
+The base TVM architecture permits 27 interrupt causes and 27 exception causes.
+Cause values are represented as:
+
+`0 ≤ cause ≤ 26`
+
+The numerical meaning of individual causes is defined by the interrupt and operating-system environment.
+The base architecture does not require a particular physical interrupt source to correspond to a particular cause number.
+Cause values are therefore part of the TVM execution environment rather than the physical machine implementation.
+
+## 36.3 System-Call Vector
+
+All system calls enter through a single architectural vector.
+The system-call vector is located at:
+
+`SYSTEM_CALL_VECTOR = VECTOR_BASE`
+
+The Word stored at this address is the system-call handler address.
+When `SYS` is executed from User mode, the processor performs the privilege transition defined in Section 18 and resolves the handler address as:
+
+`handler = Memory[SYSTEM_CALL_VECTOR]`
+
+The resulting Word becomes the new PC.
+The system-call number contained in R0 does not select the hardware vector.
+Instead, the common system-call handler receives control and dispatches the requested service according to the system-call ABI.
+
+Conceptually:
+
+~~~text
+User
+  │
+  │ SYS
+  ▼
+Memory[SYSTEM_CALL_VECTOR]
+  │
+  ▼
+Kernel system-call handler
+  │
+  ▼
+dispatch using R0
+~~~
+
+This keeps the hardware entry mechanism independent of the operating system's system-call namespace.
+
+## 36.4 Vector Architecture
+
+TVM uses an architectural vector mechanism to determine the Kernel entry address associated with system calls, interrupts, and exceptions.
+
+All vector entries contain one 27-trit Word representing a memory address.
+Because TVM uses Word-addressed memory, each vector entry occupies exactly one memory Word.
+
+The vector mechanism distinguishes three classes of Kernel entry:
+1. System-call vector
+2. Interrupt vector table
+3. Exception vector table
+
+The vector mechanism is part of the privileged execution architecture and shall not be directly modified by User-mode software.
+
+### 36.4.1 System-Call Vector
+
+The system-call vector contains a single architectural entry address.
+
+The address is defined as:
+
+`SCV = 1`
+
+where `SCV` denotes the System-Call Vector entry address.
+When `SYS` is executed from User mode, the processor loads:
+
+`PC ← Memory[SCV]`
+
+after creating the saved execution context and entering Kernel mode.
+The system-call vector therefore provides a single common entry point for all system calls. Individual system calls are distinguished by the system-call number supplied through R0 according to the TVM system-call ABI.
+The contents of the system-call vector are established by Kernel software during system initialization and shall not be modified by User-mode software.
+
+### 36.4.2 Interrupt Vector Table
+
+Interrupts are identified by an architectural interrupt cause value.
+TVM defines a fixed interrupt vector table beginning at:
+
+`IVB = 2`
+
+where `IVB` denotes the Interrupt Vector Base.
+For interrupt cause `n`, the corresponding vector entry is located at:
+
+`vector_address = IVB + n`
+
+and the handler address is obtained as:
+
+`handler_PC = Memory[IVB + n]`
+
+The processor therefore performs:
+
+`PC ← Memory[IVB + interrupt_cause]`
+
+when an interrupt is accepted.
+The initial architectural interrupt sources are:
+
+| Interrupt Cause | Source |
+| :--- | :--- |
+| 0 | Timer |
+| 1 | Virtual Storage |
+| 2 | Virtual Input/Output |
+| 3 | External Virtual Event |
+
+Cause values 4 and above are reserved for future architectural interrupt sources.
+Reserved interrupt vector entries shall contain the neutral Word value `0` until assigned by a future architectural revision or implementation definition.
+
+### 36.4.3 Exception Vector Table
+
+Architectural exceptions use a separate exception vector table.
+TVM defines a fixed exception vector table beginning at:
+
+`EVB = 29`
+
+where `EVB` denotes the Exception Vector Base.
+
+For exception cause `n`, the corresponding vector entry is located at:
+
+`vector_address = EVB + n`
+
+and the handler address is obtained as:
+
+`handler_PC = Memory[EVB + n]`
+
+The processor therefore performs:
+
+`PC ← Memory[EVB + exception_cause]`
+
+when an exception is raised.
+
+The initial architectural exception causes are:
+
+| Exception Cause | Condition |
+| :--- | :--- |
+| 0 | Illegal Instruction |
+| 1 | Invalid Register Encoding |
+| 2 | Invalid Memory Access |
+| 3 | Privilege Violation |
+| 4 | Invalid Virtual Device Operation |
+
+Cause values 5 and above are reserved for future architectural exception conditions.
+Reserved exception vector entries shall contain the neutral Word value `0` until assigned by a future architectural revision or implementation definition.
+
+### 36.4.4 Vector Address Reservation
+
+The architectural vector regions are reserved from normal software use.
+The reserved regions are:
+
+```text
+System-Call Vector:
+    address 1
+
+Interrupt Vector Table:
+    addresses 2 ... 28
+
+Exception Vector Table:
+    addresses 29 ... 55
+```
+
+Address 0 remains the reset entry address and is therefore not part of the vector tables.
+
+The complete vector table occupies 55 Words:
+```text
+Address 0       Reset Entry
+
+Address 1       System-Call Vector
+
+Addresses 2–28  Interrupt Vectors 0–26
+
+Addresses 29–55 Exception Vectors 0–26
+```
+The vector regions shall not be used for ordinary program code or data by conforming Kernel software.
+
+The vector regions are part of the architectural memory map and are therefore present in every conforming TVM implementation.
+
+### 36.4.5 Vector Entry Requirements
+
+Each vector entry shall contain a valid 27-trit Word memory address.
+A vector entry containing the neutral Word value `0` represents an unassigned vector.
+If an interrupt or exception is raised for an unassigned vector, the processor shall enter the Kernel using the corresponding vector mechanism with `PC = 0`. Because address 0 is the reset entry point, Kernel software shall provide an appropriate common fault or unhandled-event path at the reset entry when such vectors are expected to occur.
+The architecture does not require a distinct hardware handler for every individual cause. Multiple vector entries may contain the same handler address, allowing Kernel software to implement a common dispatcher.
+
+### 36.4.6 Vector Initialization
+
+After reset, the processor begins execution in Kernel mode at:
+
+`PC = 0`
+
+The initial Kernel software is responsible for initializing the vector entries before enabling User-mode execution or accepting externally generated interrupts.
+At minimum, Kernel initialization shall establish:
+
+* the System-Call Vector;
+* all interrupt vectors required by the active virtual-machine environment;
+* all exception vectors required by the active implementation;
+* the Kernel stack;
+* the initial User execution environment.
+
+Vector configuration is a privileged operation.
+User-mode software shall not be permitted to modify vector entries or alter the architectural vector configuration.
+
+### 36.4.7 Vector Lookup Semantics
+
+Vector lookup is performed only after the corresponding transition has been accepted.
+For a system call:
+
+`PC ← Memory[SCV]`
+
+For an interrupt with cause `n`:
+
+`PC ← Memory[IVB + n]`
+
+For an exception with cause `n`:
+
+`PC ← Memory[EVB + n]`
+
+The vector lookup occurs as part of the User-to-Kernel transition and does not modify the saved execution context.
+The saved context records the transition cause and therefore permits common Kernel entry code to distinguish system calls, interrupts, and exceptions after control has been transferred to the selected handler.
+
+### 36.4.8 Vector Safety
+
+Vector entries are Kernel-controlled architectural state.
+The following operations are privileged:
+
+* modifying the System-Call Vector;
+* modifying interrupt vector entries;
+* modifying exception vector entries;
+* enabling an interrupt source whose vector has not been initialized;
+* changing any implementation-defined vector configuration.
+
+A User-mode attempt to modify protected vector state results in a privilege exception.
+The vector mechanism itself does not define interrupt priority, masking, or nesting policy. Those mechanisms are defined by the interrupt execution-state architecture.
+
+## 36.5 Interrupt Vector Table
+
+Interrupt handlers are selected using the interrupt cause.
+The interrupt vector table begins at:
+
+`INTERRUPT_VECTOR_BASE = VECTOR_BASE + 1`
+
+For an interrupt with cause `c`, where:
+
+`0 ≤ c ≤ 26`
+
+the handler address is obtained from:
+
+`handler = Memory[INTERRUPT_VECTOR_BASE + c]`
+
+The resulting Word becomes the new PC after the interrupt context has been saved and Kernel mode has been entered.
+Therefore:
+
+~~~text
+cause 0  → Memory[INTERRUPT_VECTOR_BASE + 0]
+cause 1  → Memory[INTERRUPT_VECTOR_BASE + 1]
+...
+cause 26 → Memory[INTERRUPT_VECTOR_BASE + 26]
+~~~
+
+Each interrupt cause therefore has an independent architectural entry point.
+
+## 36.6 Exception Vector Table
+
+Exceptions use a separate vector region.
+The exception vector table begins at:
+
+`EXCEPTION_VECTOR_BASE = VECTOR_BASE + 28`
+
+For an exception with cause `c`, where:
+
+`0 ≤ c ≤ 26`
+
+the handler address is obtained from:
+
+`handler = Memory[EXCEPTION_VECTOR_BASE + c]`
+
+The resulting Word becomes the new PC after the exception context has been saved and Kernel mode has been entered.
+Therefore:
+
+~~~text
+cause 0  → Memory[EXCEPTION_VECTOR_BASE + 0]
+cause 1  → Memory[EXCEPTION_VECTOR_BASE + 1]
+...
+cause 26 → Memory[EXCEPTION_VECTOR_BASE + 26]
+~~~
+
+Interrupt and exception causes therefore occupy independent namespaces.
+
+## 36.7 Handler Selection
+
+Handler selection is performed entirely through virtual memory.
+The processor does not encode handler addresses directly into `SYS`, interrupt, or exception operations.
+The resolution rules are:
+
+~~~text
+SYS:
+    handler = Memory[SYSTEM_CALL_VECTOR]
+
+Interrupt(c):
+    handler = Memory[INTERRUPT_VECTOR_BASE + c]
+
+Exception(c):
+    handler = Memory[EXCEPTION_VECTOR_BASE + c]
+~~~
+
+The selected handler address is then loaded into the PC as part of the corresponding execution-state transition.
+This allows Kernel software to relocate individual handlers simply by changing their vector entries.
+
+## 36.8 Vector Entry Representation
+
+Every vector entry contains a complete 27-trit Word address.
+No truncation, sign extension, or additional address calculation is applied to the value stored in a vector entry.
+
+For example:
+
+`Memory[SYSTEM_CALL_VECTOR] = H`
+
+means:
+
+`PC ← H`
+
+Likewise:
+
+`Memory[INTERRUPT_VECTOR_BASE + c] = H`
+
+means:
+
+`PC ← H`
+
+The vector table therefore uses the same Word-sized address representation as all other TVM memory operations.
+
+## 36.9 Reset-Time Vector Initialization
+
+After reset, the processor enters Kernel mode with:
+
+~~~text
+PC  = 0
+SP  = 0
+KSP = 0
+PL  = Kernel
+STATUS = Equal
+~~~
+
+The vector table is not populated with mandatory handler addresses by the hardware reset operation.
+Instead, the initial Kernel software is responsible for initializing the vector table before enabling normal User-mode execution or accepting external interrupts.
+
+Kernel initialization therefore performs conceptually:
+
+~~~text
+Memory[SYSTEM_CALL_VECTOR] = system_call_handler
+Memory[INTERRUPT_VECTOR_BASE + i] = interrupt_handler_i
+Memory[EXCEPTION_VECTOR_BASE + i] = exception_handler_i
+~~~
+
+for every vector that the execution environment intends to support.
+Unsupported or uninitialized vectors contain no architecturally valid handler address.
+
+## 36.10 Vector Initialization Ordering
+
+The Kernel shall initialize vector entries before enabling the corresponding execution mechanism.
+The required initialization sequence is:
+
+1. Establish Kernel stack.
+2. Establish KSP.
+3. Populate system-call vector.
+4. Populate required exception vectors.
+5. Populate required interrupt vectors.
+6. Configure interrupt acceptance.
+7. Establish User-mode execution state.
+8. Transfer control to User mode.
+
+This prevents an interrupt, exception, or system call from entering an uninitialized handler.
+
+## 36.11 SYS Entry Resolution
+
+When `SYS` is executed:
+
+1. Save the current execution context.
+2. Record cause = `SystemCall`.
+3. Enter Kernel mode.
+4. Switch to the Kernel stack.
+5. Read `Memory[SYSTEM_CALL_VECTOR]`.
+6. Load the resulting Word into PC.
+7. Begin Kernel execution.
+
+The saved PC remains:
+
+`PC + 1`
+
+where PC is the address of the `SYS` instruction.
+The system-call handler therefore returns to the instruction immediately following `SYS` through `IRET`.
+
+## 36.12 Interrupt Entry Resolution
+
+When an interrupt with cause `c` is accepted:
+
+1. Save the current execution context.
+2. Record cause = `Interrupt(c)`.
+3. Enter Kernel mode.
+4. Switch to the Kernel stack.
+5. Calculate `INTERRUPT_VECTOR_BASE + c`.
+6. Read the vector entry.
+7. Load the resulting Word into PC.
+8. Begin Kernel execution.
+
+The saved PC identifies the next instruction boundary at which execution would have continued.
+`IRET` restores that saved execution state.
+
+## 36.13 Exception Entry Resolution
+
+When an exception with cause `c` is raised:
+
+1. Save the current execution context.
+2. Record cause = `Exception(c)`.
+3. Enter Kernel mode.
+4. Switch to the Kernel stack.
+5. Calculate `EXCEPTION_VECTOR_BASE + c`.
+6. Read the vector entry.
+7. Load the resulting Word into PC.
+8. Begin Kernel execution.
+
+The exception handler may inspect the saved context and determine whether the interrupted execution can safely continue.
+
+## 36.14 Invalid Vector Handling
+
+A vector entry that does not contain a valid handler address represents an uninitialized or unsupported vector.
+If execution attempts to enter such a vector, the processor raises a secondary architectural fault rather than beginning execution at an undefined address.
+The precise secondary-fault cause is implementation-defined until the complete exception-cause namespace is finalized.
+A conforming Kernel should therefore initialize every vector that it intends to expose before enabling the corresponding mechanism.
+
+## 36.15 Vector Table Protection
+
+The vector table is Kernel-owned architectural state.
+User-mode software shall not modify:
+
+* `VECTOR_BASE`;
+* system-call vector entries;
+* interrupt vector entries;
+* exception vector entries.
+
+Attempts to modify vector-table memory from User mode result in a privilege exception.
+Kernel-mode software may modify vector entries as part of system initialization, handler registration, or controlled operating-system reconfiguration.
+
+## 36.17 Vector Relocation
+
+The base TVM vector table is fixed at:
+
+`VECTOR_BASE = 1`
+
+and therefore does not contain a programmable vector-base register.
+This deliberately keeps the initial TVM privilege architecture simple.
+Future architecture revisions may introduce a programmable vector base if requirements for virtualization, multiple operating systems, or isolated execution environments justify it.
+Such an extension shall not change the semantics of the existing vector lookup mechanism.
+
+## 36.18 Vector Lookup Summary
+
+The complete entry-point resolution mechanism is therefore:
+
+~~~text
+System Call:
+
+    SYS
+     │
+     ▼
+Memory[1]
+     │
+     ▼
+System-call handler
+
+
+Interrupt(c):
+
+    Interrupt
+        │
+        ▼
+Memory[2 + c]
+        │
+        ▼
+Interrupt handler
+
+
+Exception(c):
+
+    Exception
+        │
+        ▼
+Memory[29 + c]
+        │
+        ▼
+Exception handler
+~~~
+
+where all addresses and arithmetic are performed in the native 27-trit Word domain.
+
+## 36.19 Architectural Invariants
+
+The following invariants shall hold:
+
+* All vector entries are exactly one 27-trit Word.
+* The system-call vector occupies `VECTOR_BASE`.
+* Interrupt vectors occupy the 27 Words immediately following the system-call vector.
+* Exception vectors occupy the 27 Words following the interrupt vector region.
+* `SYS` always resolves through the system-call vector.
+* Interrupts always resolve through the interrupt vector region.
+* Exceptions always resolve through the exception vector region.
+* Vector entries contain complete virtual Word addresses.
+* Handler selection does not encode physical hardware addresses.
+* Kernel software initializes vector entries before enabling the associated execution mechanism.
+* User-mode software cannot modify vector-table state.
+* Every accepted transition saves sufficient context for `IRET` to restore the previous execution state.
+
+
