@@ -922,6 +922,26 @@ BLT displacement
         PC ← PC + displacement
     else
         PC ← PC + 1
+        
+### 16.8 Stack and Subroutine Convention
+
+The TVM stack is Word-addressed and grows toward lower memory addresses.
+
+CALL performs:
+
+    return_address = PC + 1
+    SP = SP - 1
+    Memory[SP] = return_address
+    PC = PC + target
+
+RET performs:
+
+    PC = Memory[SP]
+    SP = SP + 1
+
+The return address is the address of the instruction immediately following CALL.
+
+All stack addresses and stack values are 27-trit Words.
 
 ## 17. System and I/O Instructions
 

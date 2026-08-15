@@ -766,6 +766,106 @@ int main() {
         assert(machine.cpu().registers().read(Register::R4).to_integer() == 456789);
         assert(machine.cpu().pc() == Word::from_integer(1));
     }
+    
+    // CALL - Basic Call
+    {
+        Machine machine;
+        const Word address = Word::from_integer(100);
+        const Word initial_sp = Word::from_integer(1000);
+
+        machine.cpu().set_pc(address);
+        machine.cpu().set_sp(initial_sp);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::CALL, 0, 0, 0, make_cargo(20)
+        );
+
+        machine.memory().write(address, instruction.word());
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(120));
+        assert(machine.cpu().sp() == Word::from_integer(999));
+        assert(machine.memory().read(Word::from_integer(999)) == Word::from_integer(101));
+    }
+    
+	// CALL — negative displacement
+    {
+        Machine machine;
+        const Word address = Word::from_integer(500);
+        const Word initial_sp = Word::from_integer(800);
+
+        machine.cpu().set_pc(address);
+        machine.cpu().set_sp(initial_sp);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::CALL, 0, 0, 0, make_cargo(-75)
+        );
+
+        machine.memory().write(address, instruction.word());
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(425));
+        assert(machine.cpu().sp() == Word::from_integer(799));
+        assert(machine.memory().read(Word::from_integer(799)) == Word::from_integer(501));
+    }
+    
+    // CALL + RET — complete round trip
+    {
+        Machine machine;
+        const Word call_address = Word::from_integer(100);
+        const Word initial_sp = Word::from_integer(1000);
+        const Word return_address = Word::from_integer(101);
+
+        machine.cpu().set_pc(call_address);
+        machine.cpu().set_sp(initial_sp);
+
+        const Instruction call = Instruction::encode(
+            Opcode::CALL, 0, 0, 0, make_cargo(50)
+        );
+
+        machine.memory().write(call_address, call.word());
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == Word::from_integer(150));
+        assert(machine.cpu().sp() == Word::from_integer(999));
+        assert(machine.memory().read(Word::from_integer(999)) == return_address);
+
+        const Instruction ret = Instruction::encode(
+            Opcode::RET, 0, 0, 0
+        );
+
+        machine.memory().write(machine.cpu().pc(), ret.word());
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == return_address);
+        assert(machine.cpu().sp() == initial_sp);
+    }
+    
+    // RET — manually populated stack
+    {
+        Machine machine;
+        const Word stack_address = Word::from_integer(750);
+        const Word return_address = Word::from_integer(321);
+
+        machine.cpu().set_sp(stack_address);
+        machine.memory().write(stack_address, return_address);
+
+        const Instruction instruction = Instruction::encode(
+            Opcode::RET, 0, 0, 0
+        );
+
+        machine.memory().write(Word::from_integer(100), instruction.word());
+        machine.cpu().set_pc(Word::from_integer(100));
+
+        executor.step(machine);
+
+        assert(machine.cpu().pc() == return_address);
+        assert(machine.cpu().sp() == Word::from_integer(751));
+    }
 
     return 0;
 }

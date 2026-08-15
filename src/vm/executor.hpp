@@ -209,6 +209,26 @@ public:
                 }
                 return;
             }
+            
+            case ternary::Opcode::CALL: {
+                const auto return_address = ternary::Word::from_integer(pc.to_integer() + 1);
+                const auto offset = ternary::Word::from_integer(instruction.immediate());
+                const auto new_sp = ternary::Word::from_integer(machine.cpu().sp().to_integer() - 1);
+
+                machine.cpu().set_sp(new_sp);
+                machine.memory().write(new_sp, return_address);
+                machine.cpu().set_pc(ALU::add(pc, offset));
+                return;
+            }
+
+            case ternary::Opcode::RET: {
+                const auto sp = machine.cpu().sp();
+                const auto return_address = machine.memory().read(sp);
+
+                machine.cpu().set_pc(return_address);
+                machine.cpu().set_sp(ternary::Word::from_integer(sp.to_integer() + 1));
+                return;
+            }
                 
             case ternary::Opcode::CMP:
 				machine.cpu().set_status(
