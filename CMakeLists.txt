@@ -42,17 +42,12 @@ target_include_directories(ternary_machine_assembler
 add_library(ternary_machine_runtime STATIC
     src/runtime/trn_loader.cpp
     src/runtime/image_loader.cpp
+    src/runtime/tvm.cpp
 )
 
-target_link_libraries(ternary_machine_runtime
-    PUBLIC
-        ternary_machine
-)
-
-target_include_directories(ternary_machine_runtime
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/src
-)
+target_link_libraries(ternary_machine_runtime PUBLIC ternary_machine)
+target_include_directories(ternary_machine_runtime PUBLIC ${PROJECT_SOURCE_DIR}/src)
+target_compile_features(ternary_machine_runtime PUBLIC cxx_std_20)
 
 # ================================================================================================
 # Tools
@@ -203,3 +198,10 @@ add_test(NAME execution_test COMMAND execution_test)
 add_executable(control_flow_execution_test tests/runtime/control_flow_execution_test.cpp)
 target_link_libraries(control_flow_execution_test PRIVATE ternary_machine_runtime ternary_machine_assembler)
 add_test(NAME control_flow_execution_test COMMAND control_flow_execution_test)
+
+add_executable(tvm_test tests/runtime/tvm_test.cpp)
+target_link_libraries(tvm_test PRIVATE
+    ternary_machine_runtime
+    ternary_machine_assembler
+)
+add_test(NAME tvm_test COMMAND tvm_test)
