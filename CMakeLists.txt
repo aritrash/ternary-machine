@@ -123,3 +123,30 @@ add_executable(tasm
 
 target_link_libraries(tasm PRIVATE ternary_machine_assembler)
 target_include_directories(tasm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+add_executable(loaded_image_test tests/runtime/loaded_image_test.cpp)
+target_link_libraries(loaded_image_test PRIVATE ternary_machine)
+add_test(NAME loaded_image_test COMMAND loaded_image_test)
+
+add_library(ternary_machine_runtime STATIC
+    src/runtime/trn_loader.cpp
+)
+
+target_include_directories(ternary_machine_runtime PUBLIC
+    ${PROJECT_SOURCE_DIR}/src
+)
+
+target_compile_features(ternary_machine_runtime PUBLIC
+    cxx_std_20
+)
+
+add_executable(trn_loader_test
+    tests/runtime/trn_loader_test.cpp
+)
+
+target_link_libraries(trn_loader_test PRIVATE
+    ternary_machine_runtime
+    ternary_machine_assembler
+)
+
+add_test(NAME trn_loader_test COMMAND trn_loader_test)
