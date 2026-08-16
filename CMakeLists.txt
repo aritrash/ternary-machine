@@ -99,3 +99,8 @@ add_test(NAME trn_format_test COMMAND trn_format_test)
 add_executable(trn_image_test tests/assembler/trn_image_test.cpp)
 target_include_directories(trn_image_test PRIVATE src)
 add_test(NAME trn_image_test COMMAND trn_image_test)
+
+add_executable(trn_writer_test tests/assembler/trn_writer_test.cpp)
+target_include_directories(trn_writer_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_features(trn_writer_test PRIVATE cxx_std_20)
+add_test(NAME trn_writer_test COMMAND trn_writer_test)
