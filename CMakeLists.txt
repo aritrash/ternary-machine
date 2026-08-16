@@ -91,3 +91,11 @@ add_test(NAME layout_test COMMAND layout_test)
 add_executable(encoder_test tests/assembler/encoder_test.cpp)
 target_include_directories(encoder_test PRIVATE src)
 add_test(NAME encoder_test COMMAND encoder_test)
+
+add_executable(trn_format_test tests/assembler/trn_format_test.cpp)
+target_include_directories(trn_format_test PRIVATE src)
+add_test(NAME trn_format_test COMMAND trn_format_test)
+
+add_executable(trn_image_test tests/assembler/trn_image_test.cpp)
+target_include_directories(trn_image_test PRIVATE src)
+add_test(NAME trn_image_test COMMAND trn_image_test)
