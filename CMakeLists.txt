@@ -87,3 +87,7 @@ add_test(NAME resolver_test COMMAND resolver_test)
 add_executable(layout_test tests/assembler/layout_test.cpp)
 target_include_directories(layout_test PRIVATE src)
 add_test(NAME layout_test COMMAND layout_test)
+
+add_executable(encoder_test tests/assembler/encoder_test.cpp)
+target_include_directories(encoder_test PRIVATE src)
+add_test(NAME encoder_test COMMAND encoder_test)

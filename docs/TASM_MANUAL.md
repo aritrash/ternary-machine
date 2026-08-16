@@ -201,7 +201,7 @@ TNOT Rd, Rs1
 
 ### 9.4 Shift
 ```asm
-SHF Rd, Rs1, amount
+SHF Rd, Rs1, Rs2
 ```
 The shift amount is expressed in trits.
 Incoming trits are zero-filled.

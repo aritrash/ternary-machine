@@ -57,14 +57,15 @@ int main() {
     {
         analyze("LDI R1, 42\n");
         analyze("LDI R8, -123\n");
-        analyze("SHF R1, R2, 3\n");
+        analyze("SHF R1, R2, R3\n");
     }
 
     {
         analyze("LD R1, [R2]\n");
         analyze("LD R1, [R2 + 10]\n");
-        analyze("ST R1, [R2]\n");
-        analyze("ST R1, [R2 - 10]\n");
+        analyze("ST [R1], R2\n");
+		analyze("ST [R2 + 10], R1\n");
+		analyze("ST [R2 - 10], R1\n");
         analyze("LEA R1, [R2 + 27]\n");
     }
 
@@ -112,7 +113,7 @@ int main() {
         assert(rejects("MOV R1, 10\n"));
         assert(rejects("JMP R1\n"));
         assert(rejects("CMP R1, 10\n"));
-        assert(rejects("SHF R1, R2, R3\n"));
+        assert(rejects("SHF R1, R2, 3\n"));
     }
 
     {
@@ -120,6 +121,8 @@ int main() {
         assert(rejects("LD R1, [R2 + R3]\n"));
         assert(rejects("LD R1, [R2 + 1 + 2]\n"));
         assert(rejects("LD R1, []\n"));
+        assert(rejects("ST R1, [R2]\n"));
+        assert(rejects("ST [R2], 10\n"));
     }
 
     {
