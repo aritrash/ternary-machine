@@ -1,0 +1,6 @@
+section .text
+global _start
+
+_start:
+	LDI R1, 42
+	HLT

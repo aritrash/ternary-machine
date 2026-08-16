@@ -101,6 +101,25 @@ target_include_directories(trn_image_test PRIVATE src)
 add_test(NAME trn_image_test COMMAND trn_image_test)
 
 add_executable(trn_writer_test tests/assembler/trn_writer_test.cpp)
-target_include_directories(trn_writer_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(trn_writer_test PRIVATE src)
 target_compile_features(trn_writer_test PRIVATE cxx_std_20)
 add_test(NAME trn_writer_test COMMAND trn_writer_test)
+
+add_library(ternary_machine_assembler STATIC
+    src/assembler/assembler.cpp
+)
+
+target_link_libraries(ternary_machine_assembler PUBLIC ternary_machine)
+target_include_directories(ternary_machine_assembler PUBLIC src)
+target_compile_features(ternary_machine_assembler PUBLIC cxx_std_20)
+
+add_executable(assembler_test tests/assembler/assembler_test.cpp)
+target_link_libraries(assembler_test PRIVATE ternary_machine_assembler)
+add_test(NAME assembler_test COMMAND assembler_test)
+
+add_executable(tasm
+    src/tools/tasm.cpp
+)
+
+target_link_libraries(tasm PRIVATE ternary_machine_assembler)
+target_include_directories(tasm PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
