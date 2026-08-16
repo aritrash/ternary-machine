@@ -62,6 +62,13 @@ target_link_libraries(tasm
         ternary_machine_assembler
 )
 
+add_executable(tvm
+    src/tools/tvm.cpp
+)
+
+target_link_libraries(tvm PRIVATE ternary_machine_runtime)
+target_include_directories(tvm PRIVATE ${PROJECT_SOURCE_DIR}/src)
+
 # ================================================================================================
 # Tests
 # ================================================================================================
