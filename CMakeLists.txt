@@ -212,3 +212,10 @@ target_link_libraries(tvm_test PRIVATE
     ternary_machine_assembler
 )
 add_test(NAME tvm_test COMMAND tvm_test)
+
+
+include(GNUInstallDirs)
+
+install(TARGETS tasm tvm
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
